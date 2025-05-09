@@ -1,3 +1,4 @@
+# app/models/clothing_item.py
 from app.extensions import db
 
 
@@ -9,5 +10,5 @@ class ClothingItem(db.Model):
     color = db.Column(db.String(50), nullable=True)
     wardrobe_id = db.Column(db.Integer, db.ForeignKey("wardrobe.id"), nullable=False)
 
-    # Relationship back to Wardrobe
-    wardrobe = db.relationship("Wardrobe", backref="items")
+    # Change the back reference name to avoid conflict
+    wardrobe = db.relationship("Wardrobe", backref="clothing_items", lazy=True)

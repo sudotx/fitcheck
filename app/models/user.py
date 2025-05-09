@@ -1,7 +1,8 @@
+# app/models/user.py
 from app.extensions import db
 from datetime import datetime
-
-# from app.models.wardrobe import Wardrobe
+from app.models.wardrobe import Wardrobe
+from app.models.fit import Fit  # Assuming Fit is another model you will define
 
 
 class User(db.Model):
@@ -12,4 +13,6 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     wardrobes = db.relationship("Wardrobe", backref="user", lazy=True)
-    fits = db.relationship("Fit", backref="user", lazy=True)
+    fits = db.relationship(
+        "Fit", backref="fitted_by", lazy=True
+    )  # Updated backref name

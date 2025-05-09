@@ -11,7 +11,6 @@ from flask_jwt_extended import (
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.extensions import db
-
 from app.models import User
 
 INSTAGRAM_AUTH_URL = "https://api.instagram.com/oauth/authorize"
@@ -45,13 +44,13 @@ def login():
     email = data.get("email")
     password = data.get("password")
 
-    refresh_token = create_refresh_token(identity=user.id)
-
     user = User.query.filter_by(email=email).first()
     if not user or not check_password_hash(user.password, password):
         return jsonify({"error": "Invalid credentials"}), 401
 
     token = create_access_token(identity=user.id)
+    refresh_token = create_refresh_token(identity=user.id)
+
     return (
         jsonify(
             {
@@ -76,6 +75,7 @@ def refresh():
 def me():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
+
     return jsonify(
         {
             "id": user.id,
