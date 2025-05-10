@@ -1,11 +1,14 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-key")
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL",
-        "postgresql://neondb_owner:npg_fIcRtd7G0urC@ep-green-mud-a4kywane-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require",
+        "",
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
