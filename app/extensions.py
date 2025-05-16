@@ -5,7 +5,7 @@ from flask_limiter.util import get_remote_address
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
-from meilisearch import Client as MeiliClient
+
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 
@@ -25,9 +25,6 @@ limiter = Limiter(key_func=get_remote_address)
 # CORS
 cors = CORS()
 
-# Search
-meili = MeiliClient()
-
 
 def init_extensions(app):
     """Initialize all Flask extensions"""
@@ -46,9 +43,6 @@ def init_extensions(app):
 
     # CORS
     cors.init_app(app)
-
-    # Search
-    meili.init_app(app)
 
     # Sentry
     if app.config.get("SENTRY_DSN"):

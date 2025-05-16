@@ -1,12 +1,20 @@
 from app.extensions import db
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
+from datetime import datetime
 
 
 class Bid(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    amount = db.Column(db.Float, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    __tablename__ = "bid"  # Explicitly set table name
 
-    # Relationship back to User
-    user = db.relationship(
-        "User", back_populates="bids"
-    )  # Assuming you will add bids to User
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    item_id = db.Column(UUID(as_uuid=True), db.ForeignKey("item.id"), nullable=False)
+    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey("user.id"), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship("User", backref="bids", lazy=True)
+    item = db.relationship("Item", backref="bids", lazy=True)
+
+    def __repr__(self):
+        return f"<Bid {self.amount} on Item {self.item_id} by User {self.user_id} at {self.timestamp}>"

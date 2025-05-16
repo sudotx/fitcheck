@@ -34,3 +34,13 @@
 2025-05-14 09:03:10,817 - INFO - 127.0.0.1 - - [14/May/2025 09:03:10] "[36mGET /api/auth/register?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
 2025-05-14 09:03:10,817 - INFO - 127.0.0.1 - - [14/May/2025 09:03:10] "[36mGET /api/auth/register?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
 2025-05-14 09:03:10,868 - INFO - 127.0.0.1 - - [14/May/2025 09:03:10] "[36mGET /api/auth/register?__debugger__=yes&cmd=resource&f=console.png&s=d3wuP44EPt175Hjh1Edk HTTP/1.1[0m" 304 -
+2025-05-16 10:53:19,474 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-05-16 10:53:19,474 - INFO - [33mPress CTRL+C to quit[0m
+2025-05-16 10:53:19,475 - INFO -  * Restarting with stat
+2025-05-16 10:53:20,798 - WARNING -  * Debugger is active!
+2025-05-16 10:53:20,830 - INFO -  * Debugger PIN: 138-409-878
+2025-05-16 10:53:33,965 - INFO -  * Detected change in '/Users/user/Desktop/fitCheck/app/extensions.py', reloading
+2025-05-16 10:53:34,218 - INFO -  * Restarting with stat
+2025-05-16 10:53:36,111 - WARNING -  * Debugger is active!
+2025-05-16 10:53:36,136 - INFO -  * Debugger PIN: 138-409-878
