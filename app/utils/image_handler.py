@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 import uuid
 
+# use cloudinary as CDN
 
 class ImageHandler:
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}

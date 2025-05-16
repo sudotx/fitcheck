@@ -1,4 +1,3 @@
-# app/models/fit.py
 from app.extensions import db
 
 

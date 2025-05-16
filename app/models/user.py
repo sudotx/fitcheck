@@ -1,4 +1,3 @@
-# app/models/user.py
 from app.extensions import db
 from datetime import datetime
 from app.models.wardrobe import Wardrobe

@@ -1,4 +1,3 @@
-# app/models/clothing_item.py
 from app.extensions import db
 
 

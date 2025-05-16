@@ -1,4 +1,3 @@
-# app/models/bid.py
 from app.extensions import db
 
 

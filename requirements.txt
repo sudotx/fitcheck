@@ -1,0 +1,46 @@
+# Flask and Extensions
+Flask==3.1.1
+Flask-SQLAlchemy==3.1.1
+Flask-JWT-Extended==4.7.1
+Flask-Migrate==4.0.5
+Flask-SocketIO==5.5.1
+Flask-Cors==5.0.1
+Flask-Mail==0.10.0
+Flask-Limiter==3.12
+
+# Database and Caching
+psycopg2-binary==2.9.10
+redis==6.1.0
+celery==5.5.2
+
+# AI and ML
+langchain==0.0.352
+langchain-google-genai==0.0.6
+google-generativeai==0.3.2
+faiss-cpu==1.11.0
+
+# Storage and Search
+boto3==1.38.17
+google-cloud-storage==3.1.0
+google-cloud-vision==3.10.1
+algoliasearch>=4,<5
+
+# Image Processing
+Pillow==11.2.1
+python-magic==0.4.27
+
+# Testing and Monitoring
+pytest==8.3.5
+pytest-cov==6.1.1
+sentry-sdk==2.28.0
+
+# Server and Utils
+gunicorn==23.0.0
+eventlet==0.40.0
+python-jose==3.4.0
+bcrypt==4.3.0
+python-dotenv==1.1.0
+
+# Additional dependencies
+black==25.1.0
+flake8==7.2.0

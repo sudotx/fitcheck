@@ -1,4 +1,3 @@
-# app/models/wardrobe.py
 from app.extensions import db
 
 
