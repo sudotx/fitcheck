@@ -1,6 +1,10 @@
 from flask import Blueprint, request, jsonify
 from ..services.search_service import search_service
 from ..utils.decorators import handle_errors
+from flask_jwt_extended import get_jwt_identity, jwt_required
+
+from app.services.search import search_items
+from app.services.ai import get_tag_suggestions
 
 bp = Blueprint("search", __name__)
 
@@ -26,6 +30,7 @@ def search_items():
     """
     # Get search query
     query = request.args.get("q", "")
+    tags = request.args.getlist("tags")
 
     # Get filters
     filters = {}
@@ -55,21 +60,24 @@ def search_items():
     per_page = int(request.args.get("per_page", 20))
 
     # Perform search
-    results = search_service.search_items(
-        query=query, filters=filters, sort=sort, page=page, per_page=per_page
+    results = search_items(
+        query=query, tags=tags, filters=filters, sort=sort, page=page, per_page=per_page
     )
 
     # Get facets for the current search
     facets = search_service.get_facets(query)
 
-    return jsonify(
-        {
-            "results": results["hits"],
-            "total": results["estimatedTotalHits"],
-            "page": page,
-            "per_page": per_page,
-            "facets": facets,
-        }
+    return (
+        jsonify(
+            {
+                "items": [item.to_dict() for item in results.items],
+                "total": results.total,
+                "pages": results.pages,
+                "current_page": results.page,
+                "facets": facets,
+            }
+        ),
+        200,
     )
 
 
@@ -80,3 +88,12 @@ def get_facets():
     query = request.args.get("q", "")
     facets = search_service.get_facets(query)
     return jsonify(facets)
+
+
+@bp.route("/tags/suggestions", methods=["GET"])
+def get_suggestions():
+    query = request.args.get("q", "")
+    limit = request.args.get("limit", 10, type=int)
+
+    suggestions = get_tag_suggestions(query, limit)
+    return jsonify({"suggestions": suggestions}), 200
