@@ -3,13 +3,13 @@ from ..services.search_service import search_service
 from ..utils.decorators import handle_errors
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
-from app.services.search import search_items
-from app.services.ai import get_tag_suggestions
+from app.services.search_service import search_items
+from app.services.ai_service import get_tag_suggestions
 
-bp = Blueprint("search", __name__)
+search_bp = Blueprint("search", __name__)
 
 
-@bp.route("/search", methods=["GET"])
+@search_bp.route("/search", methods=["GET"])
 @handle_errors
 def search_items():
     """
@@ -81,7 +81,7 @@ def search_items():
     )
 
 
-@bp.route("/search/facets", methods=["GET"])
+@search_bp.route("/search/facets", methods=["GET"])
 @handle_errors
 def get_facets():
     """Get available facets for the current search results"""
@@ -90,7 +90,7 @@ def get_facets():
     return jsonify(facets)
 
 
-@bp.route("/tags/suggestions", methods=["GET"])
+@search_bp.route("/tags/suggestions", methods=["GET"])
 def get_suggestions():
     query = request.args.get("q", "")
     limit = request.args.get("limit", 10, type=int)

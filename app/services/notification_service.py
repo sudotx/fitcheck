@@ -2,14 +2,14 @@ import json
 import requests
 from firebase_admin import credentials, messaging, initialize_app
 
-from ..config import Config
+from ..config import config
 
 
 class NotificationService:
     def __init__(self):
         # Initialize Firebase if credentials are available
-        if Config.FIREBASE_CREDENTIALS:
-            cred = credentials.Certificate(json.loads(Config.FIREBASE_CREDENTIALS))
+        if config.FIREBASE_CREDENTIALS:
+            cred = credentials.Certificate(json.loads(config.FIREBASE_CREDENTIALS))
             initialize_app(cred)
             self.use_firebase = True
         else:
@@ -34,12 +34,12 @@ class NotificationService:
     def _send_onesignal_notification(self, user_id, title, body, data=None):
         """Send notification using OneSignal"""
         headers = {
-            "Authorization": f"Basic {Config.ONESIGNAL_API_KEY}",
+            "Authorization": f"Basic {config.ONESIGNAL_API_KEY}",
             "Content-Type": "application/json",
         }
 
         payload = {
-            "app_id": Config.ONESIGNAL_APP_ID,
+            "app_id": config.ONESIGNAL_APP_ID,
             "include_player_ids": [user_id],
             "contents": {"en": body},
             "headings": {"en": title},

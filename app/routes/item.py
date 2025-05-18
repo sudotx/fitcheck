@@ -3,8 +3,8 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.extensions import db
 from app.models import Item, Like
-from app.services.storage import upload_file
-from app.services.ai import generate_item_embedding, generate_item_tags
+from app.services.ai_service import generate_item_embedding, generate_item_tags
+from app.utils.image_handler import upload_to_s3
 
 item_bp = Blueprint("item", __name__)
 
@@ -43,7 +43,7 @@ def create_item():
         return jsonify({"error": "No image provided"}), 400
 
     image_file = request.files["image"]
-    image_url = upload_file(image_file, "items")
+    image_url = upload_to_s3(image_file, "items")
 
     item = Item(
         user_id=user_id,
@@ -90,7 +90,7 @@ def update_item(item_id):
 
     if "image" in request.files:
         image_file = request.files["image"]
-        item.image_url = upload_file(image_file, "items")
+        item.image_url = upload_to_s3(image_file, "items")
 
     db.session.commit()
     return jsonify(item.to_dict()), 200

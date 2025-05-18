@@ -1,21 +1,62 @@
-from app.extensions import db
 import uuid
-from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
-from sqlalchemy.dialects.postgresql import ARRAY
+
+from sqlalchemy.dialects.postgresql import UUID
+
+from app.extensions import db
 
 
 class Fit(db.Model):
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey("user.id"), nullable=False)
-    title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.String(255))
-    item_ids = db.Column(ARRAY(UUID(as_uuid=True)))
-    likes = db.Column(ARRAY(UUID(as_uuid=True)))
-    comments = db.Column(db.ARRAY(db.JSON))  # Assuming comments will be stored as JSON objects
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __tablename__ = "fits"
 
-    user = db.relationship("User", backref="outfits", lazy=True)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey("users.id"), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    is_public = db.Column(db.Boolean, default=True)
+    likes_count = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    # Relationships
+    items = db.relationship(
+        "Item",
+        secondary="fit_items",
+        backref=db.backref("fits", lazy="dynamic"),
+        lazy="dynamic",
+    )
+    comments = db.relationship("Comment", backref="fit", lazy="dynamic")
+    likes = db.relationship(
+        "Like",
+        primaryjoin="and_(Like.content_type=='fit', Like.content_id==Fit.id)",
+        lazy="dynamic",
+    )
+
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "user_id": str(self.user_id),
+            "name": self.name,
+            "description": self.description,
+            "is_public": self.is_public,
+            "likes_count": self.likes_count,
+            "items": [item.to_dict() for item in self.items],
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+        }
 
     def __repr__(self):
-        return f"<Outfit {self.title or self.id}>"
+        return f"<Fit {self.name}>"
+
+
+# Association table for Fit-Item many-to-many relationship
+fit_items = db.Table(
+    "fit_items",
+    db.Column("fit_id", UUID(as_uuid=True), db.ForeignKey("fits.id"), primary_key=True),
+    db.Column(
+        "item_id", UUID(as_uuid=True), db.ForeignKey("items.id"), primary_key=True
+    ),
+    db.Column("created_at", db.DateTime, default=datetime.utcnow),
+)

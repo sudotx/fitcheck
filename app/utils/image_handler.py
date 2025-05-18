@@ -6,6 +6,7 @@ import uuid
 
 # use cloudinary as CDN
 
+
 class ImageHandler:
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 
@@ -38,3 +39,7 @@ class ImageHandler:
         except Exception as e:
             current_app.logger.error(f"Error saving image: {str(e)}")
             return None
+
+
+def upload_to_s3():
+    print("todo")

@@ -54,10 +54,6 @@ class Config:
         "CELERY_RESULT_BACKEND", "redis://localhost:6379/0"
     )
 
-    # Meilisearch
-    MEILISEARCH_URL = os.getenv("MEILISEARCH_URL", "http://localhost:7700")
-    MEILISEARCH_MASTER_KEY = os.getenv("MEILISEARCH_MASTER_KEY")
-
     # Google AI
     GEMINI_MODEL = "gemini-pro-vision"
     GEMINI_EMBEDDING_MODEL = "models/embedding-001"
@@ -85,3 +81,6 @@ class Config:
     # Security
     PASSWORD_SALT = os.getenv("PASSWORD_SALT")
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+
+
+config = Config()

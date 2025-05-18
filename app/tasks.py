@@ -1,15 +1,16 @@
-from celery import shared_task
-from PIL import Image
 import io
 from datetime import datetime, timedelta
 
+from celery import shared_task
+from PIL import Image
+
 from .extensions import celery
-from .services.ai_service import ai_service
+from .models.bid import Bid
 from .models.clothing_item import ClothingItem
 from .models.fit import Fit
-from .utils.image_handler import upload_to_s3
+from .services.ai_service import ai_service
 from .services.notification_service import notification_service
-from .models.bid import Bid
+from .utils.image_handler import upload_to_s3
 
 
 @celery.task
@@ -55,6 +56,8 @@ def update_trending_outfits():
         # Calculate trending score based on likes and comments
         likes_count = len(outfit.likes)
         comments_count = len(outfit.comments)
+
+        # trending score should be more data driven
         trending_score = (likes_count * 2) + comments_count
 
         outfit.trending_score = trending_score

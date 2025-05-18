@@ -8,16 +8,16 @@ from langchain.prompts import PromptTemplate
 from langchain.vectorstores import FAISS
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-from ..config import Config
+from ..config import config
 
 
 class AIService:
     def __init__(self):
         # Initialize Gemini
-        genai.configure(api_key=Config.goo)
+        genai.configure(api_key=config.GOOGLE_API_KEY)
         self.model = genai.GenerativeModel("gemini-pro-vision")
         self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001", google_api_key=Config.GOOGLE_API_KEY
+            model="models/embedding-001", google_api_key=config.GOOGLE_API_KEY
         )
         self.vector_store = FAISS.from_texts(
             ["initial"], self.embeddings
@@ -26,7 +26,7 @@ class AIService:
         # Initialize LLM for text generation
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.0-flash",
-            google_api_key=Config.GOOGLE_API_KEY,
+            google_api_key=config.GOOGLE_API_KEY,
             temperature=0.7,
         )
 

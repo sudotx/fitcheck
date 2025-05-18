@@ -3,19 +3,17 @@ from celery import Celery
 
 from flask import Flask
 
-from .config import Config
+from .config import config
 from .extensions import init_extensions
 from .routes import register_routes
 
-# Initialize Celery
 celery = Celery(__name__)
 
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(Config)
+    app.config.from_object(config)
 
-    # Initialize all extensions
     init_extensions(app)
 
     # Register routes

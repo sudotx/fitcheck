@@ -1,7 +1,9 @@
-from app.extensions import db
 import uuid
-from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
+
+from sqlalchemy.dialects.postgresql import UUID
+
+from app.extensions import db
 
 
 class Wardrobe(db.Model):
@@ -10,7 +12,7 @@ class Wardrobe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey("user.id"), nullable=False)
     name = db.Column(
-        db.String(100), nullable=False, default="My Wardrobe"
+        db.String(100), nullable=False, default=f"{user_id} Wardrobe"
     )  # Added a default name
     description = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

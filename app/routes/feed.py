@@ -1,11 +1,7 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import (
-    get_jwt_identity,
-    jwt_required,
-)
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
-from app.extensions import db
-from app.models import User, Fit, Outfit, Item, Follow
+from app.models import Fit, Follow, Item
 
 feed_bp = Blueprint("feed", __name__)
 
@@ -17,7 +13,7 @@ def get_home_feed():
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
 
-    # Get outfits from followed users and trending items
+    # Get fits from followed users and trending items
     followed_users = (
         Follow.query.filter_by(follower_id=user_id)
         .with_entities(Follow.following_id)
@@ -25,21 +21,19 @@ def get_home_feed():
     )
     followed_user_ids = [f[0] for f in followed_users]
 
-    outfits = (
-        Outfit.query.filter(
-            Outfit.user_id.in_(followed_user_ids), Outfit.is_public == True
-        )
-        .order_by(Outfit.created_at.desc())
+    fits = (
+        Fit.query.filter(Fit.user_id.in_(followed_user_ids), Fit.is_public == True)
+        .order_by(Fit.created_at.desc())
         .paginate(page=page, per_page=per_page)
     )
 
     return (
         jsonify(
             {
-                "outfits": [outfit.to_dict() for outfit in outfits.items],
-                "total": outfits.total,
-                "pages": outfits.pages,
-                "current_page": outfits.page,
+                "fits": [fit.to_dict() for fit in fits.items],
+                "total": fits.total,
+                "pages": fits.pages,
+                "current_page": fits.page,
             }
         ),
         200,
@@ -51,20 +45,20 @@ def get_trending_feed():
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
 
-    # Get trending outfits based on likes and recent activity
-    outfits = (
-        Outfit.query.filter_by(is_public=True)
-        .order_by(Outfit.likes_count.desc(), Outfit.created_at.desc())
+    # Get trending fits based on likes and recent activity
+    fits = (
+        Fit.query.filter_by(is_public=True)
+        .order_by(Fit.likes_count.desc(), Fit.created_at.desc())
         .paginate(page=page, per_page=per_page)
     )
 
     return (
         jsonify(
             {
-                "outfits": [outfit.to_dict() for outfit in outfits.items],
-                "total": outfits.total,
-                "pages": outfits.pages,
-                "current_page": outfits.page,
+                "fits": [outfit.to_dict() for outfit in fits.items],
+                "total": fits.total,
+                "pages": fits.pages,
+                "current_page": fits.page,
             }
         ),
         200,

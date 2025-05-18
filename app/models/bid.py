@@ -1,7 +1,9 @@
-from app.extensions import db
 import uuid
-from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
+
+from sqlalchemy.dialects.postgresql import UUID
+
+from app.extensions import db
 
 
 class Bid(db.Model):
