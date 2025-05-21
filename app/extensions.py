@@ -1,3 +1,4 @@
+import os
 import sentry_sdk
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager

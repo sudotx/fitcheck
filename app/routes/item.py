@@ -5,7 +5,7 @@ from app.extensions import db
 from app.models import Item, Like
 
 # from app.services.ai_service import generate_item_embedding, generate_item_tags
-from app.utils.image_handler import upload_to_s3
+from app.utils.image_handler import image_handler
 
 item_bp = Blueprint("item", __name__)
 
@@ -44,14 +44,19 @@ def create_item():
         return jsonify({"error": "No image provided"}), 400
 
     image_file = request.files["image"]
-    image_url = upload_to_s3(image_file, "items")
+    upload_result = image_handler.upload_to_cloudinary(image_file, folder="items")
+
+    if not upload_result:
+        return jsonify({"error": "Failed to upload image"}), 400
 
     item = Item(
         user_id=user_id,
         name=data.get("name"),
         description=data.get("description"),
         category=data.get("category"),
-        image_url=image_url,
+        image_url=upload_result["original_url"],
+        thumbnail_url=upload_result["thumbnail_url"],
+        cloudinary_public_id=upload_result["public_id"],
         is_public=data.get("is_public", True),
     )
 
@@ -60,7 +65,7 @@ def create_item():
 
     # Trigger async tasks for AI processing
     # generate_item_embedding.delay(item.id)
-    generate_item_tags.delay(item.id)
+    # generate_item_tags.delay(item.id)
 
     return jsonify(item.to_dict()), 201
 
@@ -91,7 +96,12 @@ def update_item(item_id):
 
     if "image" in request.files:
         image_file = request.files["image"]
-        item.image_url = upload_to_s3(image_file, "items")
+        upload_result = image_handler.upload_to_cloudinary(image_file, "items")
+        if not upload_result:
+            return jsonify({"error": "Failed to upload image"}), 400
+        item.image_url = upload_result["original_url"]
+        item.thumbnail_url = upload_result["thumbnail_url"]
+        item.cloudinary_public_id = upload_result["public_id"]
 
     db.session.commit()
     return jsonify(item.to_dict()), 200

@@ -20,6 +20,8 @@ class Item(db.Model):
     condition = db.Column(db.String(20))
     price = db.Column(db.Numeric(10, 2))
     image_url = db.Column(db.String(255))
+    thumbnail_url = db.Column(db.String(255))
+    cloudinary_public_id = db.Column(db.String(255))
     tags = db.Column(ARRAY(db.String(50)))
     embedding = db.Column(ARRAY(db.Float))
     is_public = db.Column(db.Boolean, default=True)
@@ -49,6 +51,7 @@ class Item(db.Model):
             "condition": self.condition,
             "price": float(self.price) if self.price else None,
             "image_url": self.image_url,
+            "thumbnail_url": self.thumbnail_url,
             "tags": self.tags,
             "is_public": self.is_public,
             "likes_count": self.likes_count,

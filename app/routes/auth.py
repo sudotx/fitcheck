@@ -8,7 +8,6 @@ from flask_jwt_extended import (
     get_jwt_identity,
     jwt_required,
 )
-from werkzeug.security import generate_password_hash
 
 from app.extensions import db
 from app.models import User
@@ -37,8 +36,9 @@ def signup():
     user = User(
         email=data["email"],
         username=data["username"],
-        password_hash=generate_password_hash(data["password"]),
     )
+
+    user.set_password(data["password"])
 
     db.session.add(user)
     db.session.commit()

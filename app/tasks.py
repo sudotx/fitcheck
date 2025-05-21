@@ -11,7 +11,9 @@ from .models.fit import Fit
 from .models.token_blocklist import TokenBlocklist
 from .services.ai_service import ai_service
 from .services.notification_service import notification_service
-from .utils.image_handler import upload_to_s3
+from .utils.image_handler import image_handler
+
+from .extensions import db
 
 
 @celery.task
@@ -30,7 +32,7 @@ def process_uploaded_image(image_data, item_id):
     img_byte_arr = img_byte_arr.getvalue()
 
     # Upload to S3
-    image_url = upload_to_s3(img_byte_arr, f"items/{item_id}.jpg")
+    image_url = image_handler.upload_to_cloudinary(img_byte_arr, f"items/{item_id}.jpg")
 
     # Generate embeddings and tags
     embedding = ai_service.generate_embedding(image)
