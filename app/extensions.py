@@ -50,3 +50,14 @@ def init_extensions(app):
             integrations=[FlaskIntegration()],
             traces_sample_rate=1.0,
         )
+
+
+def init_jwt_callbacks():
+    """Initialize JWT callbacks after all models are loaded"""
+    from app.models.token_blocklist import TokenBlocklist
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload: dict) -> bool:
+        jti = jwt_payload["jti"]
+        token = TokenBlocklist.query.filter_by(jti=jti).scalar()
+        return token is not None

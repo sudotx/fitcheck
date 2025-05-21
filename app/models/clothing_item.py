@@ -32,7 +32,7 @@ class Item(db.Model):
     # Relationships
     likes = db.relationship(
         "Like",
-        primaryjoin="and_(Like.content_type=='item', Like.content_id==Item.id)",
+        primaryjoin="and_(Like.content_type=='item', foreign(Like.content_id)==Item.id)",
         lazy="dynamic",
     )
 

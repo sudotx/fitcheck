@@ -7,11 +7,11 @@ from app.extensions import db
 
 
 class Bid(db.Model):
-    __tablename__ = "bid"  # Explicitly set table name
+    __tablename__ = "bids"  # Changed to plural for consistency
 
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    item_id = db.Column(UUID(as_uuid=True), db.ForeignKey("item.id"), nullable=False)
-    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey("user.id"), nullable=False)
+    item_id = db.Column(UUID(as_uuid=True), db.ForeignKey("items.id"), nullable=False)
+    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey("users.id"), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 

@@ -3,7 +3,8 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.extensions import db
 from app.models import Item, Like
-from app.services.ai_service import generate_item_embedding, generate_item_tags
+
+# from app.services.ai_service import generate_item_embedding, generate_item_tags
 from app.utils.image_handler import upload_to_s3
 
 item_bp = Blueprint("item", __name__)
@@ -58,7 +59,7 @@ def create_item():
     db.session.commit()
 
     # Trigger async tasks for AI processing
-    generate_item_embedding.delay(item.id)
+    # generate_item_embedding.delay(item.id)
     generate_item_tags.delay(item.id)
 
     return jsonify(item.to_dict()), 201

@@ -27,7 +27,9 @@ class User(db.Model):
     # Relationships
     items = db.relationship("Item", backref="owner", lazy=True)
     fits = db.relationship("Fit", backref="creator", lazy=True)
-    notifications = db.relationship("Notification", backref="user", lazy=True)
+    notifications = db.relationship(
+        "Notification", foreign_keys="Notification.user_id", backref="user", lazy=True
+    )
 
     # Following relationships
     followers = db.relationship(

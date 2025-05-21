@@ -1,74 +1,58 @@
 import json
-import requests
-from firebase_admin import credentials, messaging, initialize_app
+import resend
 
 from ..config import config
 
 
 class NotificationService:
     def __init__(self):
-        # Initialize Firebase if credentials are available
-        if config.FIREBASE_CREDENTIALS:
-            cred = credentials.Certificate(json.loads(config.FIREBASE_CREDENTIALS))
-            initialize_app(cred)
-            self.use_firebase = True
-        else:
-            self.use_firebase = False
+        # Initialize Resend client
+        resend.api_key = config.RESEND_API_KEY
 
-    def send_notification(self, user_id, title, body, data=None):
-        """Send a push notification to a user"""
-        if self.use_firebase:
-            return self._send_firebase_notification(user_id, title, body, data)
-        else:
-            return self._send_onesignal_notification(user_id, title, body, data)
+    def send_notification(self, user_email, subject, body, data=None):
+        """Send an email notification to a user"""
+        return self._send_resend_notification(user_email, subject, body, data)
 
-    def _send_firebase_notification(self, user_id, title, body, data=None):
-        """Send notification using Firebase Cloud Messaging"""
-        message = messaging.Message(
-            notification=messaging.Notification(title=title, body=body),
-            data=data or {},
-            token=user_id,  # Assuming user_id is the FCM token
-        )
-        return messaging.send(message)
-
-    def _send_onesignal_notification(self, user_id, title, body, data=None):
-        """Send notification using OneSignal"""
-        headers = {
-            "Authorization": f"Basic {config.ONESIGNAL_API_KEY}",
-            "Content-Type": "application/json",
+    def _send_resend_notification(self, user_email, subject, body, data=None):
+        """Send notification using Resend"""
+        params: resend.Emails.SendParams = {
+            "from": config.EMAIL_FROM,
+            "to": [user_email],
+            "subject": subject,
+            "html": body,
+            "text": body,  # Fallback plain text version
         }
 
-        payload = {
-            "app_id": config.ONESIGNAL_APP_ID,
-            "include_player_ids": [user_id],
-            "contents": {"en": body},
-            "headings": {"en": title},
-            "data": data or {},
-        }
+        if data:
+            params["tags"] = data
 
-        response = requests.post(
-            "https://onesignal.com/api/v1/notifications", headers=headers, json=payload
-        )
-        return response.json()
+        return resend.Emails.send(params)
 
-    def send_bid_notification(self, item_id, bidder_id, amount):
+    def send_bid_notification(self, item_id, bidder_id, amount, seller_email):
         """Send notification for new bid"""
-        title = "New Bid Placed"
-        body = f"Someone bid ${amount:.2f} on your item"
+        subject = "New Bid Placed"
+        body = f"""
+        <h2>New Bid on Your Item</h2>
+        <p>Someone has placed a bid of ${amount:.2f} on your item.</p>
+        <p>Click here to view the bid details.</p>
+        """
         data = {
             "type": "bid",
             "item_id": str(item_id),
             "bidder_id": str(bidder_id),
             "amount": str(amount),
         }
-        return self.send_notification(item_id, title, body, data)
+        return self.send_notification(seller_email, subject, body, data)
 
-    def send_like_notification(self, outfit_id, liker_id):
+    def send_like_notification(self, outfit_id, liker_id, creator_email):
         """Send notification for new like"""
-        title = "New Like"
-        body = "Someone liked your outfit"
+        subject = "New Like on Your Outfit"
+        body = f"""
+        <h2>Your Outfit Got a New Like!</h2>
+        <p>Someone liked your outfit. Click here to see who it was.</p>
+        """
         data = {"type": "like", "outfit_id": str(outfit_id), "liker_id": str(liker_id)}
-        return self.send_notification(outfit_id, title, body, data)
+        return self.send_notification(creator_email, subject, body, data)
 
 
 notification_service = NotificationService()

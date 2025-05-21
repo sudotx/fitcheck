@@ -30,7 +30,7 @@ class Fit(db.Model):
     comments = db.relationship("Comment", backref="fit", lazy="dynamic")
     likes = db.relationship(
         "Like",
-        primaryjoin="and_(Like.content_type=='fit', Like.content_id==Fit.id)",
+        primaryjoin="and_(Like.content_type=='fit', foreign(Like.content_id)==Fit.id)",
         lazy="dynamic",
     )
 

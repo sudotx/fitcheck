@@ -8,6 +8,7 @@ from .extensions import celery
 from .models.bid import Bid
 from .models.clothing_item import ClothingItem
 from .models.fit import Fit
+from .models.token_blocklist import TokenBlocklist
 from .services.ai_service import ai_service
 from .services.notification_service import notification_service
 from .utils.image_handler import upload_to_s3
@@ -100,3 +101,19 @@ def cleanup_expired_bids():
             # No bids, mark as expired
             item.status = "expired"
             item.save()
+
+
+@celery.task
+def cleanup_expired_tokens():
+    """Clean up expired tokens from the blocklist"""
+    # Delete tokens that have expired
+    expired_tokens = TokenBlocklist.query.filter(
+        TokenBlocklist.expires_at < datetime.utcnow()
+    ).all()
+
+    for token in expired_tokens:
+        db.session.delete(token)
+
+    db.session.commit()
+
+    return f"Cleaned up {len(expired_tokens)} expired tokens"

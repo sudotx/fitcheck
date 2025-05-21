@@ -35,7 +35,7 @@ class Config:
 
     # Search
     ALGOLIA_APP_ID = os.getenv("ALGOLIA_APP_ID")
-    ALGOLIA_API_KEY = os.getenv("ALGOLIA_API_KEY")
+    ALGOLIA_API_KEY = os.getenv("ALGOLIA_WRITE_API_KEY")
 
     MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")
     MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
@@ -55,7 +55,7 @@ class Config:
     )
 
     # Google AI
-    GEMINI_MODEL = "gemini-pro-vision"
+    GEMINI_MODEL = "gemini-2.5-flash"
     GEMINI_EMBEDDING_MODEL = "models/embedding-001"
 
     # AI Models
@@ -81,6 +81,7 @@ class Config:
     # Security
     PASSWORD_SALT = os.getenv("PASSWORD_SALT")
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+    RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 
 
 config = Config()

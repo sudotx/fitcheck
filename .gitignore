@@ -9,10 +9,9 @@ wheels/
 env
 
 # Virtual environments
-.venv
-*.env
-.env
-env
-*env
 migrations
 instance
+
+.env
+.env
+.env
