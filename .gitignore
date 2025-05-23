@@ -13,3 +13,4 @@ migrations
 instance
 
 .env
+.venv
