@@ -1,4 +1,3 @@
-import os
 from flask import current_app
 from werkzeug.utils import secure_filename
 from PIL import Image
@@ -6,11 +5,7 @@ import uuid
 import cloudinary
 import cloudinary.uploader
 from cloudinary import CloudinaryImage
-from dotenv import load_dotenv
 from app.config import config
-
-# Load environment variables
-load_dotenv()
 
 # Configure Cloudinary
 cloudinary.config(
@@ -22,13 +17,12 @@ cloudinary.config(
 
 
 class ImageHandler:
-    ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 
     @staticmethod
     def allowed_file(filename):
         return (
             "." in filename
-            and filename.rsplit(".", 1)[1].lower() in ImageHandler.ALLOWED_EXTENSIONS
+            and filename.rsplit(".", 1)[1].lower() in config.ALLOWED_EXTENSIONS
         )
 
     @staticmethod
