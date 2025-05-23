@@ -32,6 +32,7 @@ class Fit(db.Model):
         "Like",
         primaryjoin="and_(Like.content_type=='fit', foreign(Like.content_id)==Fit.id)",
         lazy="dynamic",
+        overlaps="likes",
     )
 
     def to_dict(self):

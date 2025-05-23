@@ -40,6 +40,10 @@ def create_item():
     user_id = get_jwt_identity()
     data = request.form
 
+    # Debug logging
+    # print("Form data:", dict(data))
+    # print("Files:", request.files)
+
     if "image" not in request.files:
         return jsonify({"error": "No image provided"}), 400
 
@@ -57,7 +61,7 @@ def create_item():
         image_url=upload_result["original_url"],
         thumbnail_url=upload_result["thumbnail_url"],
         cloudinary_public_id=upload_result["public_id"],
-        is_public=data.get("is_public", True),
+        is_public=data.get("is_public", "true").lower() == "true",
     )
 
     db.session.add(item)
@@ -70,7 +74,7 @@ def create_item():
     return jsonify(item.to_dict()), 201
 
 
-@item_bp.route("/items/<int:item_id>", methods=["GET"])
+@item_bp.route("/items/<string:item_id>", methods=["GET"])
 def get_item(item_id):
     item = Item.query.get_or_404(item_id)
     if not item.is_public:
@@ -78,7 +82,7 @@ def get_item(item_id):
     return jsonify(item.to_dict()), 200
 
 
-@item_bp.route("/items/<int:item_id>", methods=["PATCH"])
+@item_bp.route("/items/<string:item_id>", methods=["PATCH"])
 @jwt_required()
 def update_item(item_id):
     user_id = get_jwt_identity()
@@ -107,7 +111,7 @@ def update_item(item_id):
     return jsonify(item.to_dict()), 200
 
 
-@item_bp.route("/items/<int:item_id>", methods=["DELETE"])
+@item_bp.route("/items/<string:item_id>", methods=["DELETE"])
 @jwt_required()
 def delete_item(item_id):
     user_id = get_jwt_identity()
@@ -121,26 +125,33 @@ def delete_item(item_id):
     return jsonify({"message": "Item deleted successfully"}), 200
 
 
-@item_bp.route("/items/<int:item_id>/like", methods=["POST"])
+@item_bp.route("/items/<string:item_id>/like", methods=["POST"])
 @jwt_required()
 def like_item(item_id):
     user_id = get_jwt_identity()
 
-    if Like.query.filter_by(user_id=user_id, item_id=item_id).first():
+    # Check if already liked
+    existing_like = Like.query.filter_by(
+        user_id=user_id, content_type="item", content_id=item_id
+    ).first()
+
+    if existing_like:
         return jsonify({"error": "Already liked this item"}), 400
 
-    like = Like(user_id=user_id, item_id=item_id)
+    like = Like(user_id=user_id, content_type="item", content_id=item_id)
     db.session.add(like)
     db.session.commit()
 
     return jsonify({"message": "Item liked successfully"}), 200
 
 
-@item_bp.route("/items/<int:item_id>/unlike", methods=["POST"])
+@item_bp.route("/items/<string:item_id>/unlike", methods=["POST"])
 @jwt_required()
 def unlike_item(item_id):
     user_id = get_jwt_identity()
-    like = Like.query.filter_by(user_id=user_id, item_id=item_id).first_or_404()
+    like = Like.query.filter_by(
+        user_id=user_id, content_type="item", content_id=item_id
+    ).first_or_404()
 
     db.session.delete(like)
     db.session.commit()

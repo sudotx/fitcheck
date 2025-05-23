@@ -32,13 +32,13 @@ def update_current_user():
     return jsonify(user.to_dict()), 200
 
 
-@user_bp.route("/users/<int:user_id>", methods=["GET"])
+@user_bp.route("/users/<string:user_id>", methods=["GET"])
 def get_user_profile(user_id):
     user = User.query.get_or_404(user_id)
     return jsonify(user.to_dict()), 200
 
 
-@user_bp.route("/users/<int:user_id>/follow", methods=["POST"])
+@user_bp.route("/users/<string:user_id>/follow", methods=["POST"])
 @jwt_required()
 def follow_user(user_id):
     current_user_id = get_jwt_identity()
@@ -58,7 +58,7 @@ def follow_user(user_id):
     return jsonify({"message": "Successfully followed user"}), 200
 
 
-@user_bp.route("/users/<int:user_id>/unfollow", methods=["POST"])
+@user_bp.route("/users/<string:user_id>/unfollow", methods=["POST"])
 @jwt_required()
 def unfollow_user(user_id):
     current_user_id = get_jwt_identity()
@@ -73,13 +73,13 @@ def unfollow_user(user_id):
     return jsonify({"message": "Successfully unfollowed user"}), 200
 
 
-@user_bp.route("/users/<int:user_id>/followers", methods=["GET"])
+@user_bp.route("/users/<string:user_id>/followers", methods=["GET"])
 def get_followers(user_id):
     followers = Follow.query.filter_by(following_id=user_id).all()
     return jsonify([f.follower.to_dict() for f in followers]), 200
 
 
-@user_bp.route("/users/<int:user_id>/following", methods=["GET"])
+@user_bp.route("/users/<string:user_id>/following", methods=["GET"])
 def get_following(user_id):
     following = Follow.query.filter_by(follower_id=user_id).all()
     return jsonify([f.following.to_dict() for f in following]), 200

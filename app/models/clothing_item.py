@@ -36,6 +36,7 @@ class Item(db.Model):
         "Like",
         primaryjoin="and_(Like.content_type=='item', foreign(Like.content_id)==Item.id)",
         lazy="dynamic",
+        overlaps="likes",
     )
 
     def to_dict(self):

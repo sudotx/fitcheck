@@ -6,6 +6,7 @@ from .feed import feed_bp
 from .health import health_bp
 from .item import item_bp
 from .user import user_bp
+from .wardrobe import wardrobe_bp
 
 from .fit import fit_bp
 
@@ -24,6 +25,7 @@ def register_routes(app: Flask):
     app.register_blueprint(feed_bp)
     app.register_blueprint(health_bp)
     app.register_blueprint(item_bp)
+    app.register_blueprint(wardrobe_bp)
     # app.register_blueprint(fit_bp)
     # app.register_blueprint(search_bp)
     # app.register_blueprint(ai_bp)
