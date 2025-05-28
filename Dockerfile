@@ -32,4 +32,4 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 5000
 
 # Run the application
-CMD ["gunicorn", "--worker-class", "eventlet", "--workers", "1", "--bind", "0.0.0.0:5000", "app:create_app()"] 
+CMD ["gunicorn", "--worker-class", "eventlet", "--workers", "1", "--bind", "0.0.0.0:8000", "wsgi:app"] 
