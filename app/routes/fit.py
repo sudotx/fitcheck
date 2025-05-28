@@ -24,7 +24,7 @@ def create_fit():
     return jsonify({"message": "Fit created successfully", "fit_id": fit.id}), 201
 
 
-@fit_bp.route("/fits/<int:fit_id>", methods=["GET"])
+@fit_bp.route("/fits/<string:fit_id>", methods=["GET"])
 @jwt_required()
 def get_fit(fit_id):
     fit = Fit.query.get_or_404(fit_id)

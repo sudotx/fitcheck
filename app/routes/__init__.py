@@ -10,7 +10,8 @@ from .wardrobe import wardrobe_bp
 
 from .fit import fit_bp
 
-# from .search import search_bp
+from .search import search_bp
+
 # from .ai import ai_bp
 
 # from .notification import notification_bp
@@ -26,8 +27,8 @@ def register_routes(app: Flask):
     app.register_blueprint(health_bp)
     app.register_blueprint(item_bp)
     app.register_blueprint(wardrobe_bp)
-    # app.register_blueprint(fit_bp)
-    # app.register_blueprint(search_bp)
+    app.register_blueprint(fit_bp)
+    app.register_blueprint(search_bp)
     # app.register_blueprint(ai_bp)
     # app.register_blueprint(notification_bp)
     # app.register_blueprint(moderation_bp)
