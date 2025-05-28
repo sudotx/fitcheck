@@ -5,6 +5,8 @@ from app.extensions import db
 
 from app.models.bid import Bid
 
+from uuid import uuid4
+
 bid_bp = Blueprint("bid", __name__)
 
 
@@ -13,19 +15,20 @@ bid_bp = Blueprint("bid", __name__)
 def create_bid():
     data = request.get_json()
     amount = data.get("amount")
+    item_id = data.get("item_id")
     user_id = get_jwt_identity()
 
     if not amount or not user_id:
         return jsonify({"error": "Amount and user_id are required"}), 400
 
-    bid = Bid(amount=amount, user_id=user_id)
+    bid = Bid(amount=amount, user_id=user_id, item_id=item_id)
     db.session.add(bid)
     db.session.commit()
 
     return jsonify({"message": "Bid created successfully", "bid_id": bid.id}), 201
 
 
-@bid_bp.route("/bids/<int:bid_id>", methods=["GET"])
+@bid_bp.route("/bids/<string:bid_id>", methods=["GET"])
 @jwt_required()
 def get_bid(bid_id):
     bid = Bid.query.get_or_404(bid_id)
