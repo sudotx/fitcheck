@@ -10,14 +10,22 @@ class Config:
     # Flask
     SECRET_KEY = os.getenv("SECRET_KEY", "dev")
     DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
+    APP_URL = os.getenv("APP_URL", "http://localhost:5000")
 
     # Database
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # MongoDB Privacy Vault
+    MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/")
+    MONGODB_DB = os.getenv("MONGODB_DB", "privacy_vault")
+    MONGODB_USERNAME = os.getenv("MONGODB_USERNAME")
+    MONGODB_PASSWORD = os.getenv("MONGODB_PASSWORD")
+
     # JWT
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "jwt-secret-key")
-    JWT_ACCESS_TOKEN_EXPIRES = 3600  # 1 hour
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)  # 1 hour
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)  # 30 days
 
     # Storage
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")

@@ -5,6 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.extensions import db
+from app.models.user_privacy import UserPrivacy
 
 
 class User(db.Model):
@@ -12,7 +13,6 @@ class User(db.Model):
 
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username = db.Column(db.String(64), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     bio = db.Column(db.String(160))
     profile_picture = db.Column(db.String(255))
@@ -56,11 +56,22 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    def get_privacy_data(self):
+        """Get user's privacy data from MongoDB"""
+        return UserPrivacy.get_by_user_id(self.id)
+
+    def update_privacy_data(self, **kwargs):
+        """Update user's privacy data in MongoDB"""
+        privacy_data = self.get_privacy_data()
+        if privacy_data:
+            return UserPrivacy(**privacy_data).update(**kwargs)
+        return UserPrivacy.create(user_id=self.id, **kwargs)
+
     def to_dict(self):
+        """Convert user to dictionary, excluding sensitive data"""
         return {
             "id": str(self.id),
             "username": self.username,
-            "email": self.email,
             "bio": self.bio,
             "profile_picture": self.profile_picture,
             "location": self.location,

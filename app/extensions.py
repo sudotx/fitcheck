@@ -8,6 +8,9 @@ from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 from sentry_sdk.integrations.flask import FlaskIntegration
 from celery import Celery
+from flask_mail import Mail
+from pymongo import MongoClient
+from app.config import config
 
 # Database
 db = SQLAlchemy()
@@ -18,6 +21,8 @@ jwt = JWTManager()
 
 # WebSocket
 socketio = SocketIO()
+
+mail = Mail()
 
 # Rate Limiting
 limiter = Limiter(key_func=get_remote_address)
@@ -42,12 +47,29 @@ celery.conf.update(
     enable_utc=True,
 )
 
+# MongoDB client for privacy vault
+mongo_client = MongoClient(
+    config.MONGODB_URI,
+    username=config.MONGODB_USERNAME,
+    password=config.MONGODB_PASSWORD,
+)
+privacy_vault = mongo_client[config.MONGODB_DB]
+
+
+def init_mongodb():
+    """Initialize MongoDB collections"""
+    # Create index for user_id uniqueness
+    privacy_vault.user_privacy.create_index("user_id", unique=True)
+
 
 def init_extensions(app):
     """Initialize all Flask extensions"""
     # Database
     db.init_app(app)
     migrate.init_app(app, db)
+
+    # MongoDB
+    init_mongodb()
 
     # Authentication
     jwt.init_app(app)
@@ -68,6 +90,9 @@ def init_extensions(app):
             integrations=[FlaskIntegration()],
             traces_sample_rate=1.0,
         )
+
+    # Mail
+    mail.init_app(app)
 
 
 def init_jwt_callbacks():

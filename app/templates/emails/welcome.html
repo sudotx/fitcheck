@@ -1,0 +1,25 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Welcome to FitCheck!{% endblock %}
+
+{% block content %}
+<h2>Welcome to FitCheck, {{ username }}!</h2>
+
+<p>Thank you for joining FitCheck! We're excited to have you as part of our community.</p>
+
+<p>With FitCheck, you can:</p>
+<ul>
+    <li>Share your fashion choices</li>
+    <li>Get feedback from the community</li>
+    <li>Discover new styles</li>
+    <li>Connect with fashion enthusiasts</li>
+</ul>
+
+<p>To get started, simply log in to your account and complete your profile.</p>
+
+<a href="{{ app_url }}/dashboard" class="button">Get Started</a>
+
+<p>If you have any questions, feel free to reply to this email.</p>
+
+<p>Best regards,<br>The FitCheck Team</p>
+{% endblock %}

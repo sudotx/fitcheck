@@ -48,4 +48,6 @@ dependencies = [
     "replicate>=1.0.6",
     "resend>=2.10.0",
     "requests>=2.32.3",
+    "pymongo>=4.13.0",
+    "cryptography>=45.0.3",
 ]

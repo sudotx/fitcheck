@@ -11,7 +11,9 @@ from flask_jwt_extended import (
 
 from app.extensions import db
 from app.models import User
+from app.models.user_privacy import UserPrivacy
 from app.models.token_blocklist import TokenBlocklist
+from app.utils.mail import send_welcome_email
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -26,22 +28,34 @@ def signup():
         return jsonify({"error": "Missing required fields"}), 400
 
     # Check if user already exists
-    if User.query.filter_by(email=data["email"]).first():
-        return jsonify({"error": "Email already registered"}), 409
+    # existing_privacy = UserPrivacy.get_by_email(data["email"])
+    # if existing_privacy:
+    #     return jsonify({"error": "Email already registered"}), 409
 
     if User.query.filter_by(username=data["username"]).first():
         return jsonify({"error": "Username already taken"}), 409
 
     # Create new user
-    user = User(
-        email=data["email"],
-        username=data["username"],
-    )
-
+    user = User(username=data["username"])
     user.set_password(data["password"])
 
     db.session.add(user)
     db.session.commit()
+
+    # Create privacy data
+    user.update_privacy_data(
+        email=data["email"],
+        phone=data.get("phone"),
+        address=data.get("address"),
+        payment_info=data.get("payment_info"),
+    )
+
+    # Send welcome email
+    try:
+        send_welcome_email(user)
+    except Exception as e:
+        # Log the error but don't fail the signup
+        print(f"Failed to send welcome email: {str(e)}")
 
     # Generate tokens
     access_token = create_access_token(identity=user.id)
@@ -66,8 +80,12 @@ def login():
     if not data or not data.get("email") or not data.get("password"):
         return jsonify({"error": "Email and password are required"}), 400
 
-    user = User.query.filter_by(email=data["email"]).first()
+    # Find user by email in privacy vault
+    privacy_data = UserPrivacy.get_by_email(data["email"])
+    if not privacy_data:
+        return jsonify({"error": "Invalid email or password"}), 401
 
+    user = User.query.get(privacy_data["user_id"])
     if not user or not user.check_password(data["password"]):
         return jsonify({"error": "Invalid email or password"}), 401
 
@@ -109,12 +127,13 @@ def refresh():
 def me():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
+    privacy_data = user.get_privacy_data()
 
     return jsonify(
         {
-            "id": user.id,
+            "id": str(user.id),
             "username": user.username,
-            "email": user.email,
+            "email": privacy_data["email"] if privacy_data else None,
             "is_celebrity": user.is_celebrity,
         }
     )

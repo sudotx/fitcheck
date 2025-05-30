@@ -32,11 +32,11 @@ def create_app():
     }
 
     # Configure logging
-    # logging.basicConfig(
-    #     filename="fitcheck.log",
-    #     level=logging.INFO,
-    #     format="%(asctime)s - %(levelname)s - %(message)s",
-    # )
+    logging.basicConfig(
+        filename="fitcheck.log",
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
 
     # Register error handlers
     from .utils.error_handlers import register_error_handlers
@@ -47,8 +47,22 @@ def create_app():
     from flask_jwt_extended import JWTManager
 
     jwt = JWTManager(app)
+    app.config["JWT_SECRET_KEY"] = config.JWT_SECRET_KEY
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = config.JWT_ACCESS_TOKEN_EXPIRES
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = config.JWT_REFRESH_TOKEN_EXPIRES
     app.config["JWT_BLOCKLIST_ENABLED"] = True
     app.config["JWT_BLOCKLIST_TOKEN_CHECKS"] = ["access", "refresh"]
+
+    # MailerSend SMTP configuration
+    app.config["MAIL_SERVER"] = "smtp.mailersend.net"
+    app.config["MAIL_PORT"] = 587
+    app.config["MAIL_USE_TLS"] = True
+    app.config["MAIL_USERNAME"] = config.MAIL_USERNAME  # Your MailerSend SMTP username
+    app.config["MAIL_PASSWORD"] = config.MAIL_PASSWORD  # Your MailerSend SMTP password
+    app.config["MAIL_DEFAULT_SENDER"] = config.MAIL_DEFAULT_SENDER
+    app.config["MAIL_MAX_EMAILS"] = 100
+    app.config["MAIL_ASCII_ATTACHMENTS"] = False
+    app.config["MAIL_USE_SSL"] = False
 
     # Initialize JWT callbacks after all models are loaded
     init_jwt_callbacks()
