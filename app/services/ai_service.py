@@ -11,90 +11,171 @@
 # from ..extensions import db
 # from ..models import Item
 
-
-# class AIService:
-#     def __init__(self):
-#         # Initialize Gemini
-#         genai.configure(api_key=config.GOOGLE_API_KEY)
-#         self.model = genai.GenerativeModel("gemini-pro-vision")
-#         self.embeddings = GoogleGenerativeAIEmbeddings(
-#             model="models/embedding-001", google_api_key=config.GOOGLE_API_KEY
-#         )
-#         self.vector_store = FAISS.from_texts(
-#             ["initial"], self.embeddings
-#         )  # Initialize with dummy text
-
-#         # Initialize LLM for text generation
-#         self.llm = ChatGoogleGenerativeAI(
-#             model="gemini-2.0-flash",
-#             google_api_key=config.GOOGLE_API_KEY,
-#             temperature=0.7,
-#         )
-
-#     def generate_embedding(self, image) -> List[float]:
-#         """Generate embedding for an image using Gemini Vision"""
-#         response = self.model.generate_content(
-#             [
-#                 "Generate a detailed description of this clothing item, including style, color, and type.",
-#                 image,
-#             ]
-#         )
-#         description = response.text
-
-#         # Generate embedding from the description
-#         embedding = self.embeddings.embed_query(description)
-#         return embedding
-
-#     def add_to_index(self, embedding: List[float], item_id: str):
-#         """Add an embedding to the FAISS index"""
-#         self.vector_store.add_embeddings(text_embeddings=[(str(item_id), embedding)])
-
-#     def search_similar(
-#         self, embedding: List[float], k: int = 5
-#     ) -> List[Tuple[str, float]]:
-#         """Search for similar items using FAISS"""
-#         results = self.vector_store.similarity_search_with_score_by_vector(
-#             embedding, k=k
-#         )
-#         return [(doc.metadata.get("item_id"), score) for doc, score in results]
-
-#     def generate_tags(self, image) -> List[str]:
-#         """Generate style tags for an image using Gemini Vision"""
-#         prompt = PromptTemplate(
-#             input_variables=["image"],
-#             template="""
-#             Analyze this clothing item and provide exactly 3 style tags that best describe it.
-#             Choose from these categories: casual, formal, vintage, streetwear, sporty, bohemian,
-#             minimalist, grunge, preppy, elegant.
-#             Return only the tags, separated by commas.
-#             """,
-#         )
-
-#         chain = LLMChain(llm=self.llm, prompt=prompt)
-#         response = chain.run(image=image)
-
-#         # Parse the response to get tags
-#         tags = [tag.strip() for tag in response.split(",")]
-#         return tags[:3]  # Ensure we only return 3 tags
-
-#     def analyze_outfit(self, images: List) -> str:
-#         """Analyze a complete outfit using Gemini Vision"""
-#         prompt = PromptTemplate(
-#             input_variables=["images"],
-#             template="""
-#             Analyze this outfit combination and provide:
-#             1. Overall style assessment
-#             2. Color coordination
-#             3. Occasion appropriateness
-#             4. Suggestions for improvement
-#             """,
-#         )
-
-#         chain = LLMChain(llm=self.llm, prompt=prompt)
-#         return chain.run(images=images)
+from typing import List, Dict, Any
+import numpy as np
+from app.models.clothing_item import Item
+from app.extensions import db, celery
 
 
-# ai_service = AIService()
+class AIService:
+    def __init__(self):
+        # Initialize any AI models or services here
+        pass
+
+    def generate_embedding(self, image) -> np.ndarray:
+        """Generate embedding vector for an image"""
+        # TODO: Implement actual embedding generation
+        # For now, return a random vector
+        return np.random.rand(512)
+
+    def generate_tags(self, image) -> List[str]:
+        """Generate tags for an image"""
+        # TODO: Implement actual tag generation
+        # For now, return some default tags
+        return ["casual", "summer"]
+
+    def get_tag_suggestions(self, query: str, limit: int = 10) -> List[str]:
+        """
+        Get tag suggestions based on a query string
+
+        Args:
+            query (str): The search query
+            limit (int): Maximum number of suggestions to return
+
+        Returns:
+            List[str]: List of suggested tags
+        """
+        try:
+            # Get all unique tags from items
+            tag_results = db.session.query(Item.tags).distinct().all()
+
+            # Flatten the list of tags and filter out None values
+            all_tags = []
+            for tags_tuple in tag_results:
+                if tags_tuple[0] is not None:  # Check if tags exist
+                    all_tags.extend(tags_tuple[0])
+
+            # Filter tags that contain the query (case-insensitive)
+            suggestions = [tag for tag in all_tags if query.lower() in tag.lower()]
+
+            # Remove duplicates while preserving order
+            seen = set()
+            suggestions = [
+                tag for tag in suggestions if not (tag in seen or seen.add(tag))
+            ]
+
+            # Return top N suggestions
+            return suggestions[:limit]
+        except Exception as e:
+            # Log the error and return empty list
+            print(f"Error getting tag suggestions: {str(e)}")
+            return []
+
+    def find_similar_items(self, item_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """Find similar items based on embedding vectors"""
+        # TODO: Implement actual similarity search
+        # For now, return random items
+        items = Item.query.filter(Item.id != item_id).limit(limit).all()
+        return [item.to_dict() for item in items]
+
+    def recommend_outfit(self, user_id: str) -> Dict[str, Any]:
+        """Recommend an outfit based on user's items and preferences"""
+        # TODO: Implement actual outfit recommendation
+        # For now, return random items
+        items = Item.query.limit(3).all()
+        return {
+            "top": items[0].to_dict() if len(items) > 0 else None,
+            "bottom": items[1].to_dict() if len(items) > 1 else None,
+            "accessory": items[2].to_dict() if len(items) > 2 else None,
+        }
+
+    def get_recommendations(
+        self, user_id: str, page: int = 1, per_page: int = 10
+    ) -> Dict[str, Any]:
+        """
+        Get personalized item recommendations for a user
+
+        Args:
+            user_id (str): The ID of the user
+            page (int): Page number for pagination
+            per_page (int): Number of items per page
+
+        Returns:
+            Dict[str, Any]: Dictionary containing paginated results and metadata
+        """
+        # TODO: Implement actual recommendation algorithm
+        # For now, return random items that are public
+        query = Item.query.filter(Item.is_public == True)
+
+        # Get paginated results
+        pagination = query.paginate(page=page, per_page=per_page)
+
+        return {
+            "items": [item.to_dict() for item in pagination.items],
+            "total": pagination.total,
+            "pages": pagination.pages,
+            "current_page": pagination.page,
+            "has_next": pagination.has_next,
+            "has_prev": pagination.has_prev,
+        }
+
+
+# Create singleton instance
+ai_service = AIService()
+
+
+@celery.task
+def generate_item_embedding(item_id: str) -> None:
+    """
+    Celery task to generate and store embedding for an item
+
+    Args:
+        item_id (str): The ID of the item to generate embedding for
+    """
+    try:
+        # Get the item
+        item = Item.query.get(item_id)
+        if not item:
+            print(f"Item {item_id} not found")
+            return
+
+        # Generate embedding using the image URL
+        embedding = ai_service.generate_embedding(item.image_url)
+
+        # Store the embedding
+        item.embedding = embedding
+        db.session.commit()
+        print(f"Generated embedding for item {item_id}")
+    except Exception as e:
+        print(f"Error generating embedding for item {item_id}: {str(e)}")
+        db.session.rollback()
+
+
+@celery.task
+def generate_item_tags(item_id: str) -> None:
+    """
+    Celery task to generate and store tags for an item
+
+    Args:
+        item_id (str): The ID of the item to generate tags for
+    """
+    try:
+        # Get the item
+        item = Item.query.get(item_id)
+        if not item:
+            print(f"Item {item_id} not found")
+            return
+
+        # Generate tags using the image URL
+        tags = ai_service.generate_tags(item.image_url)
+
+        # Store the tags
+        item.tags = tags
+        db.session.commit()
+        print(f"Generated tags for item {item_id}: {tags}")
+    except Exception as e:
+        print(f"Error generating tags for item {item_id}: {str(e)}")
+        db.session.rollback()
 
 
 # def generate_item_embedding(item_id: str):

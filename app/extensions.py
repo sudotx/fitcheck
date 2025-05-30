@@ -7,6 +7,7 @@ from flask_migrate import Migrate
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 from sentry_sdk.integrations.flask import FlaskIntegration
+from celery import Celery
 
 # Database
 db = SQLAlchemy()
@@ -23,6 +24,23 @@ limiter = Limiter(key_func=get_remote_address)
 
 # CORS
 cors = CORS()
+
+# Initialize Celery
+celery = Celery(
+    "fitcheck",
+    broker="redis://localhost:6379/0",
+    backend="redis://localhost:6379/0",
+    include=["app.services.ai_service"],
+)
+
+# Configure Celery
+celery.conf.update(
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="UTC",
+    enable_utc=True,
+)
 
 
 def init_extensions(app):

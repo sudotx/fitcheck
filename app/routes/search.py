@@ -1,10 +1,8 @@
 from flask import Blueprint, request, jsonify
-from ..services.search_service import search_service
-from ..utils.decorators import handle_errors
+from app.services.search_service import search_service
+from app.services.ai_service import ai_service
+from app.utils.decorators import handle_errors
 from flask_jwt_extended import get_jwt_identity, jwt_required
-
-from app.services.search_service import search_items
-from app.services.ai_service import get_tag_suggestions
 
 search_bp = Blueprint("search", __name__)
 
@@ -13,73 +11,81 @@ search_bp = Blueprint("search", __name__)
 @handle_errors
 def search_items():
     """
-    Search for clothing items with filters and sorting
+    Search for clothing items with various filters and sorting options.
 
     Query Parameters:
-        q: Search query string
-        category: Filter by category
-        brand: Filter by brand
-        color: Filter by color
-        size: Filter by size
-        condition: Filter by condition
-        min_price: Minimum price
-        max_price: Maximum price
-        sort: Sort criteria (e.g., price:asc, created_at:desc)
-        page: Page number
-        per_page: Results per page
+    - q: Search query string
+    - category: Filter by category (e.g., tops, bottoms, shoes)
+    - color: Filter by color
+    - brand: Filter by brand
+    - min_price: Minimum price
+    - max_price: Maximum price
+    - sort: Sort field (e.g., price, created_at)
+    - order: Sort order (asc or desc)
+    - page: Page number for pagination
+    - per_page: Items per page
+
+    Returns:
+    - JSON response with search results and facets
     """
-    # Get search query
+    # Get search parameters
     query = request.args.get("q", "")
-    tags = request.args.getlist("tags")
+    category = request.args.get("category")
+    color = request.args.get("color")
+    brand = request.args.get("brand")
+    min_price = request.args.get("min_price", type=float)
+    max_price = request.args.get("max_price", type=float)
+    sort = request.args.get("sort", "created_at")
+    order = request.args.get("order", "desc")
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
 
-    # Get filters
+    # Build filters
     filters = {}
-    for param in ["category", "brand", "color", "size", "condition"]:
-        value = request.args.get(param)
-        if value:
-            filters[param] = value
+    if category:
+        filters["category"] = category
+    if color:
+        filters["color"] = color
+    if brand:
+        filters["brand"] = brand
+    if min_price is not None:
+        filters["min_price"] = min_price
+    if max_price is not None:
+        filters["max_price"] = max_price
 
-    # Handle price range
-    min_price = request.args.get("min_price")
-    max_price = request.args.get("max_price")
-    if min_price or max_price:
-        price_range = []
-        if min_price:
-            price_range.append(f"price >= {min_price}")
-        if max_price:
-            price_range.append(f"price <= {max_price}")
-        filters["price"] = " AND ".join(price_range)
-
-    # Get sorting
-    sort = request.args.get("sort")
-    if sort:
-        sort = [sort]
-
-    # Get pagination
-    page = int(request.args.get("page", 1))
-    per_page = int(request.args.get("per_page", 20))
-
-    # Perform search
-    results = search_items(
-        query=query, tags=tags, filters=filters, sort=sort, page=page, per_page=per_page
+    # Get search results
+    pagination = search_service.search_items(
+        query=query,
+        filters=filters,
+        sort=sort,
+        order=order,
+        page=page,
+        per_page=per_page,
     )
 
     # Get facets for the current search
-    facets = search_service.get_facets(query)
+    facets = search_service.get_facets(query=query, filters=filters)
 
-    # // hiii
+    # Get tag suggestions if query is provided
+    tag_suggestions = []
+    if query:
+        tag_suggestions = ai_service.get_tag_suggestions(query)
 
-    return (
-        jsonify(
-            {
-                "items": [item.to_dict() for item in results.items],
-                "total": results.total,
-                "pages": results.pages,
-                "current_page": results.page,
-                "facets": facets,
-            }
-        ),
-        200,
+    return jsonify(
+        {
+            "results": {
+                "items": [item.to_dict() for item in pagination.items],
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "current_page": pagination.page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+            },
+            "facets": facets,
+            "tag_suggestions": tag_suggestions,
+            "page": page,
+            "per_page": per_page,
+        }
     )
 
 
@@ -97,5 +103,5 @@ def get_suggestions():
     query = request.args.get("q", "")
     limit = request.args.get("limit", 10, type=int)
 
-    suggestions = get_tag_suggestions(query, limit)
+    suggestions = ai_service.get_tag_suggestions(query, limit)
     return jsonify({"suggestions": suggestions}), 200

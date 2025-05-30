@@ -31,7 +31,7 @@ def report_content():
     return jsonify({"message": "Report submitted successfully"}), 201
 
 
-@moderation_bp.route("/moderation/block/<int:user_id>", methods=["POST"])
+@moderation_bp.route("/moderation/block/<string:user_id>", methods=["POST"])
 @jwt_required()
 def block_user(user_id):
     current_user_id = get_jwt_identity()
@@ -49,7 +49,7 @@ def block_user(user_id):
     return jsonify({"message": "User blocked successfully"}), 200
 
 
-@moderation_bp.route("/moderation/unblock/<int:user_id>", methods=["POST"])
+@moderation_bp.route("/moderation/unblock/<string:user_id>", methods=["POST"])
 @jwt_required()
 def unblock_user(user_id):
     current_user_id = get_jwt_identity()

@@ -1,133 +1,145 @@
-# from algoliasearch.search.client import SearchClientSync
-# from typing import List, Dict, Any
-
-# from ..config import Config
-
-
-# class SearchService:
-#     def __init__(self):
-#         self.client = SearchClientSync(Config.ALGOLIA_APP_ID, Config.ALGOLIA_API_KEY)
-#         self.index_name = "clothing_items"
-#         self._setup_index()
-
-#     def _setup_index(self):
-#         """Configure the search index with appropriate settings"""
-#         # Define searchable attributes
-#         self.client.set_settings(
-#             index_name=self.index_name,
-#             searchableAttributes=[
-#                 "name",
-#                 "description",
-#                 "brand",
-#                 "category",
-#                 "tags",
-#                 "color",
-#             ],
-#             attributesForFaceting=[
-#                 "category",
-#                 "brand",
-#                 "color",
-#                 "size",
-#                 "condition",
-#                 "price",
-#                 "for_sale",
-#             ],
-#             attributesForSorting=["price", "created_at"],
-#         )
-
-#     def add_item(self, item: Dict[str, Any]):
-#         """Add or update a clothing item in the search index"""
-#         response = self.client.save_object(index_name=self.index_name, body=item)
-#         # Wait for indexing to complete
-#         self.client.wait_for_task(index_name=self.index_name, task_id=response.task_id)
-
-#     def search_items(
-#         self,
-#         query: str,
-#         filters: Dict[str, Any] = None,
-#         sort: List[str] = None,
-#         page: int = 1,
-#         per_page: int = 20,
-#     ) -> Dict[str, Any]:
-#         """
-#         Search for clothing items with filters and sorting
-
-#         Args:
-#             query: Search query string
-#             filters: Dictionary of filters (e.g., {'category': 'tops', 'price': '0..100'})
-#             sort: List of sort criteria (e.g., ['price:asc'])
-#             page: Page number for pagination
-#             per_page: Number of results per page
-#         """
-#         search_params = {
-#             "page": page - 1,  # Algolia uses 0-based pagination
-#             "hitsPerPage": per_page,
-#         }
-
-#         if filters:
-#             filter_strings = []
-#             for key, value in filters.items():
-#                 if isinstance(value, (list, tuple)):
-#                     filter_strings.append(f"{key}:{','.join(map(str, value))}")
-#                 else:
-#                     filter_strings.append(f"{key}:{value}")
-#             search_params["filters"] = " AND ".join(filter_strings)
-
-#         if sort:
-#             search_params["sortFacetBy"] = sort[
-#                 0
-#             ]  # Algolia uses a single sort parameter
-
-#         results = self.client.search(
-#             {
-#                 "requests": [
-#                     {
-#                         "indexName": self.index_name,
-#                         "query": query,
-#                         "params": search_params,
-#                     }
-#                 ]
-#             }
-#         )
-
-#         # Transform results to match previous format
-#         return {
-#             "hits": results["results"][0]["hits"],
-#             "estimatedTotalHits": results["results"][0]["nbHits"],
-#             "page": page,
-#             "hitsPerPage": per_page,
-#         }
-
-#     def delete_item(self, item_id: str):
-#         """Remove an item from the search index"""
-#         response = self.client.delete_object(
-#             index_name=self.index_name, object_id=item_id
-#         )
-#         # Wait for deletion to complete
-#         self.client.wait_for_task(index_name=self.index_name, task_id=response.task_id)
-
-#     def get_facets(self, query: str = "") -> Dict[str, List[str]]:
-#         """Get available facets for the current search results"""
-#         results = self.client.search(
-#             {
-#                 "requests": [
-#                     {
-#                         "indexName": self.index_name,
-#                         "query": query,
-#                         "params": {
-#                             "facets": [
-#                                 "category",
-#                                 "brand",
-#                                 "color",
-#                                 "size",
-#                                 "condition",
-#                             ]
-#                         },
-#                     }
-#                 ]
-#             }
-#         )
-#         return results["results"][0].get("facets", {})
+from app.models.clothing_item import Item
+from app.extensions import db
+from sqlalchemy import or_
 
 
-# search_service = SearchService()
+class SearchService:
+    def search_items(
+        self,
+        query="",
+        filters=None,
+        sort="created_at",
+        order="desc",
+        page=1,
+        per_page=20,
+    ):
+        """
+        Search for clothing items with filters and sorting
+
+        Args:
+            query (str): Search query string
+            filters (dict): Dictionary of filters to apply
+            sort (str): Field to sort by (e.g., price, created_at)
+            order (str): Sort order (asc or desc)
+            page (int): Page number
+            per_page (int): Results per page
+
+        Returns:
+            Pagination object containing the search results
+        """
+        # Start with base query
+        base_query = Item.query.filter(Item.is_public == True)
+
+        # Apply text search if query is provided
+        if query:
+            search_terms = query.split()
+            search_conditions = []
+            for term in search_terms:
+                search_conditions.append(
+                    or_(
+                        Item.name.ilike(f"%{term}%"),
+                        Item.description.ilike(f"%{term}%"),
+                        Item.brand.ilike(f"%{term}%"),
+                        Item.category.ilike(f"%{term}%"),
+                    )
+                )
+            base_query = base_query.filter(or_(*search_conditions))
+
+        # Apply filters
+        if filters:
+            for field, value in filters.items():
+                if field == "min_price":
+                    base_query = base_query.filter(Item.price >= value)
+                elif field == "max_price":
+                    base_query = base_query.filter(Item.price <= value)
+                else:
+                    # Other filters use exact match
+                    base_query = base_query.filter(getattr(Item, field) == value)
+
+        # Apply sorting
+        sort_field = getattr(Item, sort)
+        if order.lower() == "desc":
+            sort_field = sort_field.desc()
+        else:
+            sort_field = sort_field.asc()
+        base_query = base_query.order_by(sort_field)
+
+        # Apply pagination
+        return base_query.paginate(page=page, per_page=per_page)
+
+    def get_facets(self, query="", filters=None):
+        """
+        Get available facets for the current search results
+
+        Args:
+            query (str): Search query string
+            filters (dict): Dictionary of filters to apply
+
+        Returns:
+            dict: Dictionary containing facet counts
+        """
+        # Start with base query
+        base_query = Item.query.filter(Item.is_public == True)
+
+        # Apply text search if query is provided
+        if query:
+            search_terms = query.split()
+            search_conditions = []
+            for term in search_terms:
+                search_conditions.append(
+                    or_(
+                        Item.name.ilike(f"%{term}%"),
+                        Item.description.ilike(f"%{term}%"),
+                        Item.brand.ilike(f"%{term}%"),
+                        Item.category.ilike(f"%{term}%"),
+                    )
+                )
+            base_query = base_query.filter(or_(*search_conditions))
+
+        # Apply filters
+        if filters:
+            for field, value in filters.items():
+                if field == "min_price":
+                    base_query = base_query.filter(Item.price >= value)
+                elif field == "max_price":
+                    base_query = base_query.filter(Item.price <= value)
+                else:
+                    # Other filters use exact match
+                    base_query = base_query.filter(getattr(Item, field) == value)
+
+        # Get facet counts
+        facets = {
+            "categories": db.session.query(Item.category, db.func.count(Item.id))
+            .filter(Item.category.isnot(None))
+            .group_by(Item.category)
+            .all(),
+            "brands": db.session.query(Item.brand, db.func.count(Item.id))
+            .filter(Item.brand.isnot(None))
+            .group_by(Item.brand)
+            .all(),
+            "colors": db.session.query(Item.color, db.func.count(Item.id))
+            .filter(Item.color.isnot(None))
+            .group_by(Item.color)
+            .all(),
+            "sizes": db.session.query(Item.size, db.func.count(Item.id))
+            .filter(Item.size.isnot(None))
+            .group_by(Item.size)
+            .all(),
+            "conditions": db.session.query(Item.condition, db.func.count(Item.id))
+            .filter(Item.condition.isnot(None))
+            .group_by(Item.condition)
+            .all(),
+        }
+
+        # Convert to dictionary format
+        return {
+            "categories": [{"name": c[0], "count": c[1]} for c in facets["categories"]],
+            "brands": [{"name": b[0], "count": b[1]} for b in facets["brands"]],
+            "colors": [{"name": c[0], "count": c[1]} for c in facets["colors"]],
+            "sizes": [{"name": s[0], "count": s[1]} for s in facets["sizes"]],
+            "conditions": [{"name": c[0], "count": c[1]} for c in facets["conditions"]],
+        }
+
+
+# Create singleton instance
+search_service = SearchService()
