@@ -1,20 +1,22 @@
 import io
 import logging
 from datetime import datetime, timedelta
+import uuid
 
 from celery import shared_task
 from flask import current_app
 from PIL import Image
 
 from .extensions import celery, db
-from .models.bid import Bid
-from .models.clothing_item import ClothingItem
+from .models.bid import Bid, BidStatus
+from .models.clothing_item import ClothingItem, Item
 from .models.notification import Notification, NotificationType
 from .models.token_blocklist import TokenBlocklist
 from .models.user import User
 from .services.ai_service import ai_service
 from .services.notification_service import notification_service
 from .utils.image_handler import image_handler
+from .services.LN_service import lightning_service
 
 
 @celery.task
@@ -131,35 +133,39 @@ def generate_invoice_for_winning_bid(self, bid_id: str) -> None:
     This invoice is then sent to the winning bidder for payment.
     """
     try:
-        logger.info(f"Attempting to generate invoice for winning bid ID: {bid_id}")
+        current_app.logger.info(
+            f"Attempting to generate invoice for winning bid ID: {bid_id}"
+        )
         bid = Bid.query.get(uuid.UUID(bid_id))
         if not bid:
-            logger.error(f"Bid {bid_id} not found. Cannot generate invoice.")
+            current_app.logger.error(
+                f"Bid {bid_id} not found. Cannot generate invoice."
+            )
             return
 
         if bid.status != BidStatus.PENDING:
-            logger.warning(
+            current_app.logger.warning(
                 f"Bid {bid_id} is not in PENDING status ({bid.status.value}). Skipping invoice generation."
             )
             return
 
         item = Item.query.get(bid.item_id)
         if not item:
-            logger.error(
+            current_app.logger.error(
                 f"Item {bid.item_id} not found for bid {bid_id}. Cannot generate invoice."
             )
             return
 
         bidder = User.query.get(bid.user_id)
         if not bidder:
-            logger.error(
+            current_app.logger.error(
                 f"Bidder user {bid.user_id} not found for bid {bid_id}. Cannot generate invoice."
             )
             return
 
         # Ensure lightning_service is initialized
         if not lightning_service._client:
-            logger.error("LightsparkService not initialized. Retrying...")
+            current_app.logger.error("LightsparkService not initialized. Retrying...")
             raise self.retry(countdown=60)  # Retry after 1 minute
 
         memo = f"Payment for winning bid on item: {item.title}"
@@ -178,7 +184,7 @@ def generate_invoice_for_winning_bid(self, bid_id: str) -> None:
             bid.status = BidStatus.INVOICE_GENERATED
             bid.updated_at = datetime.utcnow()
             db.session.commit()
-            logger.info(
+            current_app.logger.info(
                 f"Invoice generated for bid {bid_id}. Encoded invoice: {encoded_invoice}"
             )
 
@@ -198,13 +204,13 @@ def generate_invoice_for_winning_bid(self, bid_id: str) -> None:
             )  # Or a more specific status like INVOICE_GENERATION_FAILED
             bid.updated_at = datetime.utcnow()
             db.session.commit()
-            logger.error(f"Failed to generate invoice for bid {bid_id}.")
+            current_app.logger.error(f"Failed to generate invoice for bid {bid_id}.")
             # Notify admin or relevant user about the failure
             # Consider retrying this task if it's a transient Lightspark error
             raise self.retry(countdown=300)  # Retry after 5 minutes
 
     except Exception as e:
-        logger.error(
+        current_app.logger.error(
             f"Error in generate_invoice_for_winning_bid for bid {bid_id}: {e}",
             exc_info=True,
         )
@@ -221,7 +227,7 @@ def handle_seller_payout(
     This would typically be triggered after a winning bid has been paid.
     """
     try:
-        logger.info(
+        current_app.logger.info(
             f"Attempting payout for item {item_id} to seller with amount {payout_amount_sats} sats."
         )
 
@@ -231,7 +237,7 @@ def handle_seller_payout(
 
         # Ensure lightning_service is initialized
         if not lightning_service._client:
-            logger.error("LightsparkService not initialized. Retrying...")
+            current_app.logger.error("LightsparkService not initialized. Retrying...")
             raise self.retry(countdown=60)  # Retry after 1 minute
 
         # Pay the seller's invoice
@@ -244,16 +250,16 @@ def handle_seller_payout(
         if payment and payment.id:
             # You might want to record this outgoing payment in your database
             # e.g., in a new Payout model, or update the Item/Bid with payout_id
-            logger.info(
+            current_app.logger.info(
                 f"Payout initiated for item {item_id}. Lightspark Payment ID: {payment.id}, Status: {payment.status}"
             )
             # Consider sending a notification to the seller about the pending/successful payout
         else:
-            logger.error(f"Failed to initiate payout for item {item_id}.")
+            current_app.logger.error(f"Failed to initiate payout for item {item_id}.")
             raise self.retry(countdown=300)  # Retry after 5 minutes
 
     except Exception as e:
-        logger.error(
+        current_app.logger.error(
             f"Error in handle_seller_payout for item {item_id}: {e}", exc_info=True
         )
         db.session.rollback()
