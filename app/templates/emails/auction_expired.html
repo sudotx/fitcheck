@@ -1,0 +1,28 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h2>Auction Ended - No Sale</h2>
+<p>Hello,</p>
+<p>Your auction for "{{ item.title }}" has ended without any successful bids.</p>
+
+<div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+    <p style="margin: 0;"><strong>Item:</strong> {{ item.title }}</p>
+    <p style="margin: 0;"><strong>Starting Price:</strong> ${{ item.starting_price }}</p>
+    <p style="margin: 0;"><strong>End Date:</strong> {{ item.end_date.strftime('%B %d, %Y') }}</p>
+</div>
+
+<p>What you can do next:</p>
+<ul>
+    <li>Relist the item with a lower starting price</li>
+    <li>Try selling it through our Buy Now feature</li>
+    <li>Adjust the item description or photos</li>
+</ul>
+
+<a href="{{ app_url }}/items/{{ item.id }}/relist"
+    style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">Relist
+    Item</a>
+
+<p>Need help? Our seller support team can provide tips for successful listings.</p>
+
+<p>Best regards,<br>The {{ app_name }} Team</p>
+{% endblock %}

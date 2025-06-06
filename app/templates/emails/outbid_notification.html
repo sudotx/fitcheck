@@ -1,0 +1,23 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h2>You've Been Outbid!</h2>
+<p>Hello,</p>
+<p>Someone has placed a higher bid on an item you were bidding on.</p>
+
+<div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+    <p style="margin: 0;"><strong>Item:</strong> {{ item.title }}</p>
+    <p style="margin: 0;"><strong>New Highest Bid:</strong> ${{ metadata.new_highest_bid }}</p>
+    <p style="margin: 0;"><strong>New Bidder:</strong> {{ actor.username }}</p>
+</div>
+
+<p>Don't miss out! Click the button below to place a new bid:</p>
+
+<a href="{{ app_url }}/items/{{ item.id }}/bids"
+    style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">Place
+    New Bid</a>
+
+<p>Remember, you can set up automatic bidding to stay ahead of the competition.</p>
+
+<p>Best regards,<br>The {{ app_name }} Team</p>
+{% endblock %}

@@ -69,7 +69,7 @@ def init_extensions(app):
     migrate.init_app(app, db)
 
     # MongoDB
-    init_mongodb()
+    # init_mongodb()
 
     # Authentication
     jwt.init_app(app)

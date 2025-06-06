@@ -1,9 +1,26 @@
 import uuid
 from datetime import datetime
+from enum import Enum
 
+from sqlalchemy import JSON
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.extensions import db
+
+
+class NotificationType(Enum):
+    BID_RECEIVED = "bid_received"
+    BID_OUTBID = "bid_outbid"
+    AUCTION_WON = "auction_won"
+    AUCTION_EXPIRED = "auction_expired"
+    SIZE_RESTOCK = "size_restock"  # For saved searches
+    LIKE_RECEIVED = "like_received"
+    COMMENT_RECEIVED = "comment_received"
+    FOLLOW_RECEIVED = "follow_received"
+    MESSAGE_RECEIVED = "message_received"
+    SYSTEM_MESSAGE = "system_message"
+    MARKETPLACE_MESSAGE = "marketplace_message"
+    MARKETPLACE_MESSAGE = "marketplace_message"
 
 
 class Notification(db.Model):
@@ -11,28 +28,67 @@ class Notification(db.Model):
 
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey("users.id"), nullable=False)
-    type = db.Column(db.String(50), nullable=False)  # 'like', 'comment', 'follow', etc.
-    content_type = db.Column(
-        db.String(50), nullable=False
-    )  # 'item', 'fit', 'comment', etc.
-    content_id = db.Column(UUID(as_uuid=True), nullable=False)
-    actor_id = db.Column(UUID(as_uuid=True), db.ForeignKey("users.id"), nullable=False)
-    message = db.Column(db.String(255), nullable=False)
-    is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    type = db.Column(db.Enum(NotificationType), nullable=False)
+    item_id = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey("items.id"),
+        nullable=True,  # Some notifications won't link to items
+    )
+    actor_id = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey("users.id"),
+        nullable=True,  # System-generated notifs won't have an actor
+    )
+
+    metadata = db.Column(JSON, nullable=True)
+
+    is_read = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(
+        db.DateTime, default=datetime.utcnow, index=True  # For sorting
+    )
+
+    user = db.relationship("User", foreign_keys=[user_id])
+    item = db.relationship("Item")
+    actor = db.relationship("User", foreign_keys=[actor_id])
 
     def to_dict(self):
-        return {
+        base = {
             "id": str(self.id),
-            "user_id": str(self.user_id),
-            "type": self.type,
-            "content_type": self.content_type,
-            "content_id": str(self.content_id),
-            "actor_id": str(self.actor_id),
-            "message": self.message,
+            "type": self.type.value,
             "is_read": self.is_read,
             "created_at": self.created_at.isoformat(),
+            "preview": self._generate_preview(),
         }
+
+        if self.item_id:
+            base["item"] = {
+                "id": str(self.item_id),
+                "title": self.item.title if self.item else "[Deleted]",
+                "image": self.item.images[0] if self.item else None,
+            }
+
+        if self.actor_id:
+            base["actor"] = {
+                "id": str(self.actor_id),
+                "username": self.actor.username if self.actor else "[Deleted]",
+            }
+
+        return base
+
+    def _generate_preview(self):
+        previews = {
+            NotificationType.BID_RECEIVED: "New bid on your item",
+            NotificationType.BID_OUTBID: "You've been outbid",
+            NotificationType.AUCTION_WON: "You won the auction!",
+            NotificationType.AUCTION_EXPIRED: "Your auction ended unsold",
+            NotificationType.SIZE_RESTOCK: "New items in your size",
+        }
+        return previews.get(self.type, "New notification")
+
+    def mark_read(self):
+        if not self.is_read:
+            self.is_read = True
+            db.session.commit()
 
     def __repr__(self):
         return f"<Notification {self.type} for {self.user_id}>"

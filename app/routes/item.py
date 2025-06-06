@@ -40,15 +40,11 @@ def create_item():
     user_id = get_jwt_identity()
     data = request.form
 
-    # Debug logging
-    # print("Form data:", dict(data))
-    # print("Files:", request.files)
-
     if "image" not in request.files:
         return jsonify({"error": "No image provided"}), 400
 
     image_file = request.files["image"]
-    upload_result = image_handler.upload_to_cloudinary(image_file, folder="items")
+    upload_result = image_handler.upload_to_cloudinary(image_file, "items")
 
     if not upload_result:
         return jsonify({"error": "Failed to upload image"}), 400

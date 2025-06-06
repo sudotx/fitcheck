@@ -1,0 +1,22 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h2>Your Outfit Got a New Like!</h2>
+<p>Hello,</p>
+<p>{{ actor.username }} liked your outfit!</p>
+
+<div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+    <p style="margin: 0;"><strong>Liked By:</strong> {{ actor.username }}</p>
+    <p style="margin: 0;"><strong>Outfit:</strong> {{ item.title }}</p>
+</div>
+
+<p>Click below to see who else has liked your outfit:</p>
+
+<a href="{{ app_url }}/outfits/{{ item.id }}/likes"
+    style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">View
+    Likes</a>
+
+<p>Keep creating amazing outfits! Your style is inspiring others.</p>
+
+<p>Best regards,<br>The {{ app_name }} Team</p>
+{% endblock %}

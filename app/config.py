@@ -11,6 +11,7 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev")
     DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
     APP_URL = os.getenv("APP_URL", "http://localhost:5000")
+    APP_NAME = "FitCheck"
 
     # Database
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
@@ -94,6 +95,20 @@ class Config:
     CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
     CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
     CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
+
+    RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+
+    # Lightspark API Credentials
+    LIGHTSPARK_API_TOKEN_CLIENT_ID = os.environ.get("LIGHTSPARK_API_TOKEN_CLIENT_ID")
+    LIGHTSPARK_API_TOKEN_CLIENT_SECRET = os.environ.get(
+        "LIGHTSPARK_API_TOKEN_CLIENT_SECRET"
+    )
+    LIGHTSPARK_NODE_ID = os.environ.get(
+        "LIGHTSPARK_NODE_ID"
+    )  # Your Lightspark Node ID (the one your app uses)
+    LIGHTSPARK_WEBHOOK_SECRET = os.environ.get(
+        "LIGHTSPARK_WEBHOOK_SECRET"
+    )  # Secret for verifying webhooks
 
 
 config = Config()

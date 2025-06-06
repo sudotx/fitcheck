@@ -7,6 +7,7 @@ from .follow import Follow
 from .block import Block
 from .report import Report
 from .notification import Notification
+from .bid import Bid
 
 __all__ = [
     "User",
@@ -19,4 +20,5 @@ __all__ = [
     "Block",
     "Report",
     "Notification",
+    "Bid",
 ]

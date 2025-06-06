@@ -1,0 +1,28 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h2>Congratulations! You Won the Auction!</h2>
+<p>Hello,</p>
+<p>Great news! You've won the auction for "{{ item.title }}".</p>
+
+<div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+    <p style="margin: 0;"><strong>Item:</strong> {{ item.title }}</p>
+    <p style="margin: 0;"><strong>Winning Bid:</strong> ${{ metadata.winning_amount }}</p>
+    <p style="margin: 0;"><strong>Seller:</strong> {{ item.seller.username }}</p>
+</div>
+
+<p>Next steps:</p>
+<ol>
+    <li>Complete the payment within 24 hours</li>
+    <li>Coordinate with the seller for shipping details</li>
+    <li>Leave feedback after receiving the item</li>
+</ol>
+
+<a href="{{ app_url }}/items/{{ item.id }}/payment"
+    style="display: inline-block; padding: 12px 24px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">Complete
+    Payment</a>
+
+<p>If you have any questions about the purchase process, our support team is here to help.</p>
+
+<p>Best regards,<br>The {{ app_name }} Team</p>
+{% endblock %}

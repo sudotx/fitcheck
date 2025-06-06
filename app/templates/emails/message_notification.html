@@ -1,0 +1,22 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h2>New Message Received</h2>
+<p>Hello,</p>
+<p>You have a new message from {{ actor.username }}.</p>
+
+<div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+    <p style="margin: 0;"><strong>From:</strong> {{ actor.username }}</p>
+    <p style="margin: 0;"><strong>Preview:</strong> {{ metadata.message_preview }}</p>
+</div>
+
+<p>Click below to read and respond to the message:</p>
+
+<a href="{{ app_url }}/messages/{{ metadata.conversation_id }}"
+    style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">View
+    Message</a>
+
+<p>Stay connected with your community!</p>
+
+<p>Best regards,<br>The {{ app_name }} Team</p>
+{% endblock %}

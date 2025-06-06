@@ -1,10 +1,13 @@
-from flask import current_app
-from werkzeug.utils import secure_filename
-from PIL import Image
 import uuid
+
 import cloudinary
 import cloudinary.uploader
 from cloudinary import CloudinaryImage
+from flask import current_app
+
+# from PIL import Image
+from werkzeug.utils import secure_filename
+
 from app.config import config
 
 # Configure Cloudinary
@@ -26,12 +29,12 @@ class ImageHandler:
         )
 
     @staticmethod
-    def upload_to_cloudinary(file, folder="items"):
+    def upload_to_cloudinary(file, folder):
         """
         Upload an image to Cloudinary and return the URL
         """
-        if not file or not ImageHandler.allowed_file(file.filename):
-            return None
+        # if not file or not ImageHandler.allowed_file(file.filename):
+        #     return None
 
         try:
             # Generate a unique filename

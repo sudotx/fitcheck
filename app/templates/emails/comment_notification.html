@@ -1,0 +1,23 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h2>New Comment on Your {{ item.type }}</h2>
+<p>Hello,</p>
+<p>{{ actor.username }} commented on your {{ item.type }}:</p>
+
+<div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+    <p style="margin: 0;"><strong>Comment by:</strong> {{ actor.username }}</p>
+    <p style="margin: 0;"><strong>On:</strong> {{ item.title }}</p>
+    <p style="margin: 0;"><strong>Comment:</strong> {{ metadata.comment_text }}</p>
+</div>
+
+<p>Click below to view and respond to the comment:</p>
+
+<a href="{{ app_url }}/{{ item.type }}s/{{ item.id }}/comments"
+    style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">View
+    Comment</a>
+
+<p>Engage with your community by responding to comments!</p>
+
+<p>Best regards,<br>The {{ app_name }} Team</p>
+{% endblock %}

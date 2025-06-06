@@ -1,0 +1,25 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h2>{{ metadata.title }}</h2>
+<p>Hello,</p>
+
+<div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+    <p style="margin: 0;">{{ metadata.message }}</p>
+    {% if metadata.action_url %}
+    <p style="margin: 10px 0 0 0;"><strong>Action Required:</strong> {{ metadata.action_text }}</p>
+    {% endif %}
+</div>
+
+{% if metadata.action_url %}
+<p>Click below to take action:</p>
+
+<a href="{{ app_url }}{{ metadata.action_url }}"
+    style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">{{
+    metadata.action_button_text }}</a>
+{% endif %}
+
+<p>If you have any questions, please contact our support team.</p>
+
+<p>Best regards,<br>The {{ app_name }} Team</p>
+{% endblock %}

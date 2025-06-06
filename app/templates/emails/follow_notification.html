@@ -1,0 +1,22 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h2>New Follower!</h2>
+<p>Hello,</p>
+<p>{{ actor.username }} started following you!</p>
+
+<div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+    <p style="margin: 0;"><strong>New Follower:</strong> {{ actor.username }}</p>
+    <p style="margin: 0;"><strong>Followers:</strong> {{ metadata.follower_count }}</p>
+</div>
+
+<p>Click below to view their profile:</p>
+
+<a href="{{ app_url }}/users/{{ actor.username }}"
+    style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">View
+    Profile</a>
+
+<p>Your style is gaining attention! Keep sharing your amazing outfits.</p>
+
+<p>Best regards,<br>The {{ app_name }} Team</p>
+{% endblock %}

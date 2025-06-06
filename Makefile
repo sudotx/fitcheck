@@ -11,9 +11,6 @@ migrate-up:
 migrate-down:
 	flask db downgrade
 
-migrate-create:
-	flask db migrate -m "$(message)"
-
 # Development server
 dev:
 	flask run --debug
