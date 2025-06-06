@@ -5,7 +5,7 @@ import cloudinary.uploader
 from cloudinary import CloudinaryImage
 from flask import current_app
 
-# from PIL import Image
+from PIL import Image
 from werkzeug.utils import secure_filename
 
 from app.config import config

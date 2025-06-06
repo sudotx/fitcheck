@@ -4,7 +4,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from app.extensions import db
 from app.models import Item, Like
 
-# from app.services.ai_service import generate_item_embedding, generate_item_tags
+from app.services.ai_service import ai_service
 from app.utils.image_handler import image_handler
 
 item_bp = Blueprint("item", __name__)
@@ -64,8 +64,8 @@ def create_item():
     db.session.commit()
 
     # Trigger async tasks for AI processing
-    # generate_item_embedding.delay(item.id)
-    # generate_item_tags.delay(item.id)
+    ai_service.generate_item_embedding.delay(item.id)
+    ai_service.generate_item_tags.delay(item.id)
 
     return jsonify(item.to_dict()), 201
 
@@ -119,37 +119,3 @@ def delete_item(item_id):
     db.session.delete(item)
     db.session.commit()
     return jsonify({"message": "Item deleted successfully"}), 200
-
-
-@item_bp.route("/items/<string:item_id>/like", methods=["POST"])
-@jwt_required()
-def like_item(item_id):
-    user_id = get_jwt_identity()
-
-    # Check if already liked
-    existing_like = Like.query.filter_by(
-        user_id=user_id, content_type="item", content_id=item_id
-    ).first()
-
-    if existing_like:
-        return jsonify({"error": "Already liked this item"}), 400
-
-    like = Like(user_id=user_id, content_type="item", content_id=item_id)
-    db.session.add(like)
-    db.session.commit()
-
-    return jsonify({"message": "Item liked successfully"}), 200
-
-
-@item_bp.route("/items/<string:item_id>/unlike", methods=["POST"])
-@jwt_required()
-def unlike_item(item_id):
-    user_id = get_jwt_identity()
-    like = Like.query.filter_by(
-        user_id=user_id, content_type="item", content_id=item_id
-    ).first_or_404()
-
-    db.session.delete(like)
-    db.session.commit()
-
-    return jsonify({"message": "Item unliked successfully"}), 200

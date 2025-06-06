@@ -7,22 +7,20 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.extensions import db
 
 
-class BidStatus(Enum):  # Formalized status tracking
-    RESERVED = "reserved"  # Funds held via Lightning invoice
-    WON = "won"  # Auction winner, invoice settled
-    RELEASED = "released"  # Funds returned (outbid or auction failed)
-    EXPIRED = "expired"  # Auction ended without winner
+class BidStatus(Enum):
+    RESERVED = "reserved"
+    WON = "won"
+    RELEASED = "released"
+    EXPIRED = "expired"
 
 
 class Bid(db.Model):
-    __tablename__ = "bids"  # Changed to plural for consistency
+    __tablename__ = "bids"
 
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     amount = db.Column(db.Float, nullable=False)
-    created_at = db.Column(
-        db.DateTime, default=datetime.utcnow, index=True
-    )  # Renamed for clarity
-    # Relationships
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
     item_id = db.Column(UUID(as_uuid=True), db.ForeignKey("items.id"), nullable=False)
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey("users.id"), nullable=False)
 

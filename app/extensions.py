@@ -1,15 +1,15 @@
 import sentry_sdk
+from celery import Celery
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_migrate import Migrate
-from flask_socketio import SocketIO
-from flask_sqlalchemy import SQLAlchemy
-from sentry_sdk.integrations.flask import FlaskIntegration
-from celery import Celery
 from flask_mail import Mail
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
 from pymongo import MongoClient
+from sentry_sdk.integrations.flask import FlaskIntegration
+
 from app.config import config
 
 # Database
@@ -18,9 +18,6 @@ migrate = Migrate()
 
 # Authentication
 jwt = JWTManager()
-
-# WebSocket
-socketio = SocketIO()
 
 mail = Mail()
 
@@ -69,13 +66,10 @@ def init_extensions(app):
     migrate.init_app(app, db)
 
     # MongoDB
-    # init_mongodb()
+    init_mongodb()
 
     # Authentication
     jwt.init_app(app)
-
-    # WebSocket
-    socketio.init_app(app, cors_allowed_origins="*")
 
     # Rate Limiting
     limiter.init_app(app)
