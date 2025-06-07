@@ -14,12 +14,7 @@ class NotificationType(Enum):
     AUCTION_WON = "auction_won"
     AUCTION_EXPIRED = "auction_expired"
     SIZE_RESTOCK = "size_restock"  # For saved searches
-    LIKE_RECEIVED = "like_received"
-    COMMENT_RECEIVED = "comment_received"
-    FOLLOW_RECEIVED = "follow_received"
-    MESSAGE_RECEIVED = "message_received"
     SYSTEM_MESSAGE = "system_message"
-    MARKETPLACE_MESSAGE = "marketplace_message"
     MARKETPLACE_MESSAGE = "marketplace_message"
 
 
@@ -40,7 +35,7 @@ class Notification(db.Model):
         nullable=True,  # System-generated notifs won't have an actor
     )
 
-    metadata = db.Column(JSON, nullable=True)
+    notification_data = db.Column(JSON, nullable=True)
 
     is_read = db.Column(db.Boolean, default=False, index=True)
     created_at = db.Column(

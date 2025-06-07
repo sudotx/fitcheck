@@ -67,17 +67,6 @@ class Item(db.Model):
     tags = db.Column(ARRAY(db.String(50)))  # "jacket", "dress", "sneakers"
     is_public = db.Column(db.Boolean, default=True)
 
-    # Likes
-    likes_count = db.Column(db.Integer, default=0)
-
-    # Relationships
-    likes = db.relationship(
-        "Like",
-        primaryjoin="and_(Like.content_type=='item', foreign(Like.content_id)==Item.id)",
-        lazy="dynamic",
-        overlaps="likes",
-    )
-
     # Relationships (optimized)
     user = db.relationship("User", back_populates="items")
     bids = db.relationship(
@@ -101,7 +90,6 @@ class Item(db.Model):
             "thumbnail_url": self.thumbnail_url,
             "tags": self.tags,
             "is_public": self.is_public,
-            "likes_count": self.likes_count,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
             "current_price": self.auction_current_bid or self.auction_start_price,

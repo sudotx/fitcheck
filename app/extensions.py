@@ -8,6 +8,7 @@ from flask_mail import Mail
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from pymongo import MongoClient
+from pymongo.server_api import ServerApi
 from sentry_sdk.integrations.flask import FlaskIntegration
 
 from app.config import config
@@ -15,6 +16,8 @@ from app.config import config
 # Database
 db = SQLAlchemy()
 migrate = Migrate()
+mongo_client = None
+privacy_vault = None
 
 # Authentication
 jwt = JWTManager()
@@ -44,40 +47,34 @@ celery.conf.update(
     enable_utc=True,
 )
 
-# MongoDB client for privacy vault
-mongo_client = MongoClient(
-    config.MONGODB_URI,
-    username=config.MONGODB_USERNAME,
-    password=config.MONGODB_PASSWORD,
-)
-privacy_vault = mongo_client[config.MONGODB_DB]
-
-
-def init_mongodb():
-    """Initialize MongoDB collections"""
-    # Create index for user_id uniqueness
-    privacy_vault.user_privacy.create_index("user_id", unique=True)
-
 
 def init_extensions(app):
     """Initialize all Flask extensions"""
-    # Database
+    global mongo_client, privacy_vault
+
+    # MongoDB Configuration
+    mongo_client = MongoClient(
+        app.config["MONGODB_URI"],
+        server_api=ServerApi("1"),
+        tls=True,
+        tlsAllowInvalidCertificates=True,
+        serverSelectionTimeoutMS=5000,
+        connectTimeoutMS=10000,
+        socketTimeoutMS=20000,
+    )
+
+    # Initialize privacy vault
+    privacy_vault = mongo_client[app.config.get("MONGODB_DB", "fitcheck")][
+        "privacy_vault"
+    ]
+
+    # Other extensions
     db.init_app(app)
     migrate.init_app(app, db)
-
-    # MongoDB
-    init_mongodb()
-
-    # Authentication
     jwt.init_app(app)
-
-    # Rate Limiting
     limiter.init_app(app)
-
-    # CORS
     cors.init_app(app)
 
-    # Sentry
     if app.config.get("SENTRY_DSN"):
         sentry_sdk.init(
             dsn=app.config["SENTRY_DSN"],
@@ -85,7 +82,6 @@ def init_extensions(app):
             traces_sample_rate=1.0,
         )
 
-    # Mail
     mail.init_app(app)
 
 

@@ -13,7 +13,9 @@ from app.extensions import db
 from app.models import User
 from app.models.user_privacy import UserPrivacy
 from app.models.token_blocklist import TokenBlocklist
-from app.utils.mail import send_welcome_email
+
+# from app.utils.mail import send_welcome_email
+from app.services.notification_service import notification_service
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -52,7 +54,7 @@ def signup():
 
     # Send welcome email
     try:
-        send_welcome_email(user)
+        notification_service.send_welcome_email(user)
     except Exception as e:
         # Log the error but don't fail the signup
         print(f"Failed to send welcome email: {str(e)}")

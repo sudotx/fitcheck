@@ -18,10 +18,20 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # MongoDB Privacy Vault
-    MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/")
+    MONGODB_URI = os.getenv("MONGODB_URI")
     MONGODB_DB = os.getenv("MONGODB_DB", "privacy_vault")
     MONGODB_USERNAME = os.getenv("MONGODB_USERNAME")
     MONGODB_PASSWORD = os.getenv("MONGODB_PASSWORD")
+
+    # Add these MongoDB specific settings
+    MONGODB_SETTINGS = {
+        "ssl": True,
+        "ssl_cert_reqs": "CERT_NONE",  # For development only
+        "tlsAllowInvalidCertificates": True,  # For development only
+        "serverSelectionTimeoutMS": 5000,
+        "connectTimeoutMS": 10000,
+        "socketTimeoutMS": 20000,
+    }
 
     # JWT
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "jwt-secret-key")
@@ -98,17 +108,20 @@ class Config:
 
     RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 
-    # Lightspark API Credentials
-    LIGHTSPARK_API_TOKEN_CLIENT_ID = os.environ.get("LIGHTSPARK_API_TOKEN_CLIENT_ID")
-    LIGHTSPARK_API_TOKEN_CLIENT_SECRET = os.environ.get(
-        "LIGHTSPARK_API_TOKEN_CLIENT_SECRET"
-    )
-    LIGHTSPARK_NODE_ID = os.environ.get(
-        "LIGHTSPARK_NODE_ID"
-    )  # Your Lightspark Node ID (the one your app uses)
-    LIGHTSPARK_WEBHOOK_SECRET = os.environ.get(
-        "LIGHTSPARK_WEBHOOK_SECRET"
-    )  # Secret for verifying webhooks
+    # Bitnob API Credentials
+    BITNOB_API_KEY = os.environ.get("BITNOB_API_KEY")
+    BITNOB_PRODUCTION = False
+
+
+class ProductionConfig(Config):
+    MONGODB_SETTINGS = {
+        "ssl": True,
+        "ssl_cert_reqs": "CERT_REQUIRED",
+        "tlsAllowInvalidCertificates": False,
+        "serverSelectionTimeoutMS": 5000,
+        "connectTimeoutMS": 10000,
+        "socketTimeoutMS": 20000,
+    }
 
 
 config = Config()

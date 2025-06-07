@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.extensions import db
-from app.models import Item, Like
+from app.models.clothing_item import Item
 
 from app.services.ai_service import ai_service
 from app.utils.image_handler import image_handler

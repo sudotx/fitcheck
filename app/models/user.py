@@ -39,7 +39,6 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False)
     email_verified = db.Column(db.Boolean, default=False)
     is_celebrity = db.Column(db.Boolean, default=False)
-    push_token = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Marketplace Specific
@@ -48,15 +47,10 @@ class User(db.Model):
     payout_hold = db.Column(db.Boolean, default=True)  # For new sellers
     completed_sales = db.Column(db.Integer, default=0)
 
-    # Size Preferences (Non-PII)
-    preferred_size_system = db.Column(db.String(2))  # US/EU/UK
-    body_type = db.Column(db.String(20))  # apple/pear/rectangle
-
-    # Device Communication
-    push_token = db.Column(db.String(255), index=True)
+    temp_balance_hold = db.Column(db.Float, default=0.0)
 
     # New size preference fields
-    body_type = db.Column(db.String(20))  # apple, pear, rectangle
+    body_type = db.Column(db.String(20))  # apple/pear/rectangle
     measurements = db.Column(JSON)  # Store measurements
     preferred_size_system = db.Column(db.String(2))  # US, EU, UK
 
@@ -113,7 +107,6 @@ class User(db.Model):
             "email": self.email,
             "email_verified": self.email_verified,
             "is_celebrity": self.is_celebrity,
-            "push_token": self.push_token,
             "lightning_address": self.lightning_address,
             "seller_rating": round(self.seller_rating, 1),
             "completed_sales": self.completed_sales,

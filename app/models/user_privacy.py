@@ -5,7 +5,23 @@ from app.utils.encryption import encrypt_data, decrypt_data
 
 
 class UserPrivacy:
-    collection = privacy_vault.user_privacy
+    _collection = None
+
+    @classmethod
+    def get_collection(cls):
+        if cls._collection is None:
+            cls._collection = privacy_vault.user_privacy
+        return cls._collection
+
+    @classmethod
+    def get_privacy_data(cls, user_id):
+        return cls.get_collection().find_one({"user_id": str(user_id)})
+
+    @classmethod
+    def set_privacy_data(cls, user_id, data):
+        return cls.get_collection().update_one(
+            {"user_id": str(user_id)}, {"$set": data}, upsert=True
+        )
 
     def __init__(self, user_id, email, phone=None, address=None, payment_info=None):
         self.user_id = user_id
@@ -30,7 +46,7 @@ class UserPrivacy:
             "updated_at": datetime.utcnow(),
         }
 
-        result = cls.collection.insert_one(encrypted_data)
+        result = cls.get_collection().insert_one(encrypted_data)
         return cls.get_by_id(result.inserted_id)
 
     @classmethod
@@ -38,7 +54,7 @@ class UserPrivacy:
         """Find user privacy data by email"""
         # Since email is encrypted, we need to search through all documents
         # This is not efficient for large datasets, consider adding an index
-        for doc in cls.collection.find():
+        for doc in cls.get_collection().find():
             try:
                 decrypted_email = decrypt_data(doc["email"])
                 if decrypted_email == email:
@@ -49,14 +65,14 @@ class UserPrivacy:
 
     @classmethod
     def get_by_user_id(cls, user_id):
-        doc = cls.collection.find_one({"user_id": str(user_id)})
+        doc = cls.get_collection().find_one({"user_id": str(user_id)})
         if doc:
             return cls._decrypt_document(doc)
         return None
 
     @classmethod
     def get_by_id(cls, _id):
-        doc = cls.collection.find_one({"_id": ObjectId(_id)})
+        doc = cls.get_collection().find_one({"_id": ObjectId(_id)})
         if doc:
             return cls._decrypt_document(doc)
         return None
@@ -89,11 +105,11 @@ class UserPrivacy:
 
         if update_data:
             update_data["updated_at"] = datetime.utcnow()
-            self.collection.update_one(
+            self.get_collection().update_one(
                 {"user_id": str(self.user_id)}, {"$set": update_data}
             )
             return self.get_by_user_id(self.user_id)
         return None
 
     def delete(self):
-        return self.collection.delete_one({"user_id": str(self.user_id)})
+        return self.get_collection().delete_one({"user_id": str(self.user_id)})

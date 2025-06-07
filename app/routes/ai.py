@@ -5,6 +5,8 @@ from app.services.ai_service import (
     ai_service,
 )
 
+from app.tasks import generate_item_embedding_task
+
 ai_bp = Blueprint("ai", __name__)
 
 
@@ -23,7 +25,7 @@ def embed_item(item_id):
     user_id = get_jwt_identity()
 
     # Trigger async task for embedding generation
-    task = ai_service.generate_item_embedding.delay(item_id)
+    task = generate_item_embedding_task(item_id)
 
     return (
         jsonify(

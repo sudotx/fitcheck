@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
 import random
 from sqlalchemy import func
-from app.models import ClothingItem, Wardrobe, User, db
+from app.models.clothing_item import Item
+from app.models.user import User
+from app.extensions import db
 
 
 class RecommendationEngine:
@@ -14,12 +16,12 @@ class RecommendationEngine:
 
         # Get user's wardrobe with size filtering
         wardrobe_items = (
-            db.session.query(ClothingItem)
+            db.session.query(Item)
             .join(Wardrobe)
             .filter(
-                Wardrobe.user_id == user_id,
-                ClothingItem.is_clean == True,  # Only clean items
-                # ClothingItem.season == get_current_season(),  # Seasonal filtering
+                Item.user_id == user_id,
+                Item.is_clean == True,  # Only clean items
+                # Item.season == get_current_season(),  # Seasonal filtering
             )
             .all()
         )

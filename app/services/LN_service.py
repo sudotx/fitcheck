@@ -1,169 +1,174 @@
 import os
-import lightspark
+from bitnob import Lightning
 import logging
 from typing import Optional, Dict, Any
 import uuid
 
-from app.config import config  # Assuming config is imported from your app's config
+from app.config import config
 
 logger = logging.getLogger(__name__)
 
 
 class LightningService:
     """
-    Service for interacting with the Lightspark API for Lightning Network operations.
+    Service for interacting with the Bitnob API for Lightning Network operations.
     """
 
     def __init__(self):
         """
-        Initializes the Lightspark client.
-        Ensures API credentials and Node ID are loaded from configuration.
+        Initializes the Bitnob Lightning client.
+        Ensures API key is loaded from configuration.
         """
-        self._client: Optional[lightspark.LightsparkSyncClient] = None
-        self.api_token_id = config.LIGHTSPARK_API_TOKEN_CLIENT_ID
-        self.api_token_secret = config.LIGHTSPARK_API_TOKEN_CLIENT_SECRET
-        self.node_id = config.LIGHTSPARK_NODE_ID
+        self.api_key = config.BITNOB_API_KEY
+        self.is_production = config.BITNOB_PRODUCTION
 
-        if not self.api_token_id or not self.api_token_secret or not self.node_id:
+        if not self.api_key:
             logger.error(
-                "Lightspark API credentials or Node ID are not configured. Check LIGHTSPARK_API_TOKEN_CLIENT_ID, LIGHTSPARK_API_TOKEN_CLIENT_SECRET, and LIGHTSPARK_NODE_ID environment variables."
+                "Bitnob API key is not configured. Check BITNOB_API_KEY environment variable."
             )
         else:
-            self._client = lightspark.LightsparkSyncClient(
-                api_token_client_id=self.api_token_id,
-                api_token_client_secret=self.api_token_secret,
-            )
-            logger.info("LightsparkSyncClient initialized.")
+            # Set environment variables for Bitnob
+            os.environ["BITNOB_API_KEY"] = self.api_key
+            os.environ["BITNOB_PRODUCTION"] = str(self.is_production).lower()
+
+            self._client = Lightning()
+            logger.info("Bitnob Lightning client initialized.")
 
     @property
-    def client(self) -> lightspark.LightsparkSyncClient:
+    def client(self) -> Lightning:
         """
-        Returns the Lightspark client instance, raising an error if not initialized.
+        Returns the Bitnob Lightning client instance, raising an error if not initialized.
         """
         if not self._client:
-            raise RuntimeError(
-                "LightsparkService not initialized. Missing API credentials or Node ID."
-            )
+            raise RuntimeError("LightningService not initialized. Missing API key.")
         return self._client
 
     def create_invoice(
-        self, amount_sats: float, memo: str, expiry_secs: int = 3600
+        self,
+        amount_sats: float,
+        customer_email: str,
+        description: str = "Payment for FitCheck",
+        expires_at: str = "24h",
+        private: bool = False,
+        is_including_private_channels: bool = False,
+        is_fallback_included: bool = True,
     ) -> Optional[str]:
         """
-        Creates a new Lightning invoice (BOLT11) using Lightspark.
+        Creates a new Lightning invoice (BOLT11) using Bitnob.
 
         Args:
             amount_sats (float): The amount of the invoice in Satoshis.
-            memo (str): A description for the invoice.
-            expiry_secs (int): The invoice expiration time in seconds (default: 1 hour).
+            customer_email (str): Email of the customer making the payment.
+            description (str): A description for the invoice.
+            expires_at (str): The invoice expiration time (default: "24h").
+            private (bool): Whether the invoice is private.
+            is_including_private_channels (bool): Whether to include private channels.
+            is_fallback_included (bool): Whether to include fallback address.
 
         Returns:
             Optional[str]: The encoded BOLT11 invoice string if successful, None otherwise.
         """
         try:
-            # Lightspark amounts are in millisatoshis (msats)
-            amount_msats = int(amount_sats * 1000)
             logger.info(
-                f"Creating invoice for {amount_sats} sats ({amount_msats} msats) with memo: '{memo}' for node: {self.node_id}"
+                f"Creating invoice for {amount_sats} sats with description: '{description}' for customer: {customer_email}"
             )
 
-            invoice = self.client.create_invoice(
-                node_id=self.node_id,
-                amount_msats=amount_msats,
-                memo=memo,
-                expiry_secs=expiry_secs,
-            )
-            if invoice and invoice.data and invoice.data.encoded_payment_request:
-                encoded_invoice = invoice.data.encoded_payment_request
-                logger.info(f"Successfully created invoice: {encoded_invoice}")
-                return encoded_invoice
+            payload = {
+                "customerEmail": customer_email,
+                "description": description,
+                "tokens": amount_sats,
+                "expires_at": expires_at,
+                "private": private,
+                "is_including_private_channels": is_including_private_channels,
+                "is_fallback_included": is_fallback_included,
+            }
+
+            response = self.client.create_invoice(payload)
+
+            if response and response.get("data"):
+                invoice_data = response["data"]
+                logger.info(f"Successfully created invoice: {invoice_data}")
+                return invoice_data
             else:
-                logger.error(f"Failed to create invoice. Response: {invoice}")
+                logger.error(f"Failed to create invoice. Response: {response}")
                 return None
         except Exception as e:
-            logger.error(f"Error creating Lightspark invoice: {e}", exc_info=True)
+            logger.error(f"Error creating Bitnob invoice: {e}", exc_info=True)
             return None
 
     def pay_invoice(
         self,
         encoded_invoice: str,
-        maximum_fees_sats: Optional[float] = None,
-        timeout_secs: int = 60,
-    ) -> Optional[lightspark.OutgoingPayment]:
+        customer_email: str,
+        reference: str = None,
+        description: str = "Payment from FitCheck",
+    ) -> Optional[Dict[str, Any]]:
         """
-        Pays a Lightning invoice using Lightspark.
+        Pays a Lightning invoice using Bitnob.
 
         Args:
             encoded_invoice (str): The BOLT11 invoice string to pay.
-            maximum_fees_sats (Optional[float]): Maximum fees to pay in Satoshis. Defaults to 500 sats.
-            timeout_secs (int): Timeout for the payment in seconds.
+            customer_email (str): Email of the customer making the payment.
+            reference (str): Optional reference for the payment.
+            description (str): Description of the payment.
 
         Returns:
-            Optional[lightspark.OutgoingPayment]: The OutgoingPayment object if successful, None otherwise.
+            Optional[Dict[str, Any]]: The payment response if successful, None otherwise.
         """
         try:
-            # Convert maximum_fees_sats to millisatoshis if provided
-            maximum_fees_msats = (
-                int(maximum_fees_sats * 1000)
-                if maximum_fees_sats is not None
-                else 500000
-            )  # 500 sats default
+            if not reference:
+                reference = f"fitcheck-payment-{uuid.uuid4()}"
 
             logger.info(
-                f"Attempting to pay invoice {encoded_invoice} from node {self.node_id} with max fees: {maximum_fees_sats} sats"
+                f"Attempting to pay invoice {encoded_invoice} for customer {customer_email}"
             )
 
-            # Note: For sensitive operations like paying, Lightspark recommends unlocking the node.
-            # This SDK uses `LightsparkSyncClient`, which handles internal signing if configured.
-            # If you encounter issues, ensure your Lightspark account/node has the necessary
-            # permissions and key management setup (e.g., Remote Signing).
-            payment = self.client.pay_invoice(
-                node_id=self.node_id,
-                encoded_invoice=encoded_invoice,
-                timeout_secs=timeout_secs,
-                maximum_fees_msats=maximum_fees_msats,
-            )
+            payload = {
+                "customerEmail": customer_email,
+                "reference": reference,
+                "description": description,
+                "payment_request": encoded_invoice,
+            }
 
-            if payment:
+            response = self.client.pay_invoice(payload)
+
+            if response and response.get("data"):
                 logger.info(
-                    f"Payment initiated. ID: {payment.id}, Status: {payment.status}"
+                    f"Payment initiated. Reference: {reference}, Response: {response}"
                 )
-                return payment
+                return response
             else:
                 logger.error(
-                    f"Failed to initiate payment for invoice: {encoded_invoice}. Response: {payment}"
+                    f"Failed to initiate payment for invoice: {encoded_invoice}. Response: {response}"
                 )
                 return None
         except Exception as e:
             logger.error(
-                f"Error paying Lightspark invoice {encoded_invoice}: {e}", exc_info=True
+                f"Error paying Bitnob invoice {encoded_invoice}: {e}", exc_info=True
             )
             return None
 
-    def get_payment_status(
-        self, payment_id: str
-    ) -> Optional[lightspark.TransactionStatus]:
+    def get_invoice_status(self, invoice_id: str) -> Optional[Dict[str, Any]]:
         """
-        Retrieves the status of an outgoing Lightning payment.
+        Retrieves the status of a Lightning invoice.
 
         Args:
-            payment_id (str): The ID of the outgoing payment.
+            invoice_id (str): The ID of the invoice.
 
         Returns:
-            Optional[lightspark.TransactionStatus]: The status of the payment, or None if not found.
+            Optional[Dict[str, Any]]: The invoice status and details if found, None otherwise.
         """
         try:
-            # The get_entity method requires the object type to retrieve.
-            payment = self.client.get_entity(payment_id, lightspark.OutgoingPayment)
-            if payment:
-                logger.info(f"Payment {payment_id} status: {payment.status}")
-                return payment.status
+            response = self.client.get_invoice(invoice_id)
+            if response and response.get("data"):
+                logger.info(f"Invoice {invoice_id} status: {response['data']}")
+                return response["data"]
             else:
-                logger.warning(f"Payment {payment_id} not found.")
+                logger.warning(f"Invoice {invoice_id} not found.")
                 return None
         except Exception as e:
             logger.error(
-                f"Error retrieving payment status for {payment_id}: {e}", exc_info=True
+                f"Error retrieving invoice status for {invoice_id}: {e}", exc_info=True
             )
             return None
 

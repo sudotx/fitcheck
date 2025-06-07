@@ -7,7 +7,8 @@ from PIL import Image
 
 from .extensions import celery, db
 from .models.bid import Bid, BidStatus
-from .models.clothing_item import ClothingItem, Item
+from .models.clothing_item import Item
+from .models.clothing_item import AuctionStatus
 from .models.token_blocklist import TokenBlocklist
 from .models.user import User
 from .services.ai_service import ai_service
@@ -44,7 +45,7 @@ def process_uploaded_image(image_data, item_id):
     tags = ai_service.generate_tags(image)
 
     # Update item in database
-    item = ClothingItem.query.get(item_id)
+    item = Item.query.get(item_id)
     if item:
         item.image_url = image_url
         item.embedding_vector = embedding.tolist()
@@ -56,8 +57,8 @@ def process_uploaded_image(image_data, item_id):
 def cleanup_expired_bids():
     """Clean up expired bids and notify winners"""
     # Get items with expired bidding
-    expired_items = ClothingItem.query.filter(
-        ClothingItem.bid_end_time < datetime.utcnow(), ClothingItem.status == "active"
+    expired_items = Item.query.filter(
+        Item.auction_ends_at < datetime.utcnow(), Item.auction_status == "active"
     ).all()
 
     for item in expired_items:
@@ -68,25 +69,25 @@ def cleanup_expired_bids():
 
         if highest_bid:
             # Update item status
-            item.status = "sold"
-            item.winner_id = highest_bid.user_id
+            item.auction_status = AuctionStatus.SOLD
+            item.auction_current_bidder_id = highest_bid.user_id
             item.save()
 
             # Notify winner and seller
             notification_service.send_notification(
                 highest_bid.user_id,
                 "You won the auction!",
-                f"You won the auction for {item.name} with a bid of ${highest_bid.amount:.2f}",
+                f"You won the auction for {item.title} with a bid of ${highest_bid.amount:.2f}",
             )
 
             notification_service.send_notification(
                 item.user_id,
                 "Your item was sold!",
-                f"Your item {item.name} was sold for ${highest_bid.amount:.2f}",
+                f"Your item {item.title} was sold for ${highest_bid.amount:.2f}",
             )
         else:
             # No bids, mark as expired
-            item.status = "expired"
+            item.auction_status = AuctionStatus.EXPIRED
             item.save()
 
 

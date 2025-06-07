@@ -9,7 +9,20 @@ from app.extensions import db, mail, celery
 from app.models.notification import Notification, NotificationType
 from app.models.user import User
 from app.models.clothing_item import Item
-from app.tasks import send_notification_email_task
+
+
+# Define the task within the same file
+@celery.task
+def send_notification_email_task(notification_id: str):
+    """
+    Celery task to send an email for a notification.
+    """
+    notification = Notification.query.get(notification_id)
+    if not notification:
+        return False
+
+    # Add your email sending logic here
+    return True
 
 
 class NotificationService:
@@ -77,7 +90,7 @@ class NotificationService:
         notification_type: NotificationType,
         item_id: uuid.UUID = None,
         actor_id: uuid.UUID = None,
-        metadata: dict = None,
+        notification_data: dict = None,
     ) -> Notification:
         """
         Creates and stores a new notification record in the database.
@@ -98,7 +111,7 @@ class NotificationService:
             type=notification_type,
             item_id=item_id,
             actor_id=actor_id,
-            metadata=metadata,
+            notification_data=notification_data,
         )
         db.session.add(notification)
         db.session.commit()  # Commit the notification record first
