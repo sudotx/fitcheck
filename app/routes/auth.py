@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import (
@@ -10,9 +11,21 @@ from flask_jwt_extended import (
 )
 
 from app.extensions import db
-from app.models import User, UserStatus, UserRole
+from app.models import User
 from app.models.user_privacy import UserPrivacy
 from app.models.token_blocklist import TokenBlocklist
+
+
+class UserStatus(Enum):
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    UNVERIFIED = "unverified"
+
+
+class UserRole(Enum):
+    USER = "user"
+    ADMIN = "admin"
+
 
 from app.services.notification_service import notification_service
 
@@ -39,7 +52,7 @@ def signup():
     user = User(
         username=data["username"],
         email=data["email"],
-        status=UserStatus.UNVERIFIED,  # Default status
+        status=UserStatus.ACTIVE,  # Default status
         role=UserRole.USER,  # Default role
     )
     user.set_password(data["password"])
