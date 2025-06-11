@@ -25,8 +25,8 @@ def get_home_feed():
             {
                 "outfit": recommendation["outfit"],
                 "confidence": recommendation["confidence"],
-                "color_palette": recommendation["color_palette"],
                 "generated_at": recommendation["generated_at"],
+                "color_palette": recommendation["color_palette"],
             }
         ),
         200,
@@ -78,8 +78,8 @@ def get_recommendations():
             {
                 "outfit": recommendation["outfit"],
                 "confidence": recommendation["confidence"],
-                "color_palette": recommendation["color_palette"],
                 "generated_at": recommendation["generated_at"],
+                "color_palette": recommendation["color_palette"],
             }
         ),
         200,

@@ -10,11 +10,10 @@ from flask_jwt_extended import (
 )
 
 from app.extensions import db
-from app.models import User
+from app.models import User, UserStatus, UserRole
 from app.models.user_privacy import UserPrivacy
 from app.models.token_blocklist import TokenBlocklist
 
-# from app.utils.mail import send_welcome_email
 from app.services.notification_service import notification_service
 
 auth_bp = Blueprint("auth", __name__)
@@ -30,16 +29,30 @@ def signup():
         return jsonify({"error": "Missing required fields"}), 400
 
     # Check if user already exists
-    # existing_privacy = UserPrivacy.get_by_email(data["email"])
-    # if existing_privacy:
-    #     return jsonify({"error": "Email already registered"}), 409
+    if User.query.filter_by(email=data["email"]).first():
+        return jsonify({"error": "Email already registered"}), 409
 
     if User.query.filter_by(username=data["username"]).first():
         return jsonify({"error": "Username already taken"}), 409
 
-    # Create new user
-    user = User(username=data["username"])
+    # Create new user with required fields
+    user = User(
+        username=data["username"],
+        email=data["email"],
+        status=UserStatus.UNVERIFIED,  # Default status
+        role=UserRole.USER,  # Default role
+    )
     user.set_password(data["password"])
+
+    # Optional fields that can be set during signup
+    if "body_type" in data:
+        user.body_type = data["body_type"]
+    if "measurements" in data:
+        user.measurements = data["measurements"]
+    if "preferred_size_system" in data:
+        user.preferred_size_system = data["preferred_size_system"]
+    if "lightning_address" in data:
+        user.lightning_address = data["lightning_address"]
 
     db.session.add(user)
     db.session.commit()
@@ -69,6 +82,7 @@ def signup():
                 "message": "User registered successfully",
                 "access_token": access_token,
                 "refresh_token": refresh_token,
+                "user": user.to_dict(),  # Include user data in response
             }
         ),
         201,

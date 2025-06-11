@@ -9,7 +9,7 @@ health_bp = Blueprint("health", __name__)
 @health_bp.route("/health", methods=["GET"])
 def healthcheck():
     try:
-        # Check database connection
+        # check database connection
         db.session.execute(text("SELECT 1")).fetchone()
         return (
             jsonify(

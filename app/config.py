@@ -124,4 +124,18 @@ class ProductionConfig(Config):
     }
 
 
+class PaymentConfig:
+    """Payment provider configuration"""
+
+    DEFAULT_PROVIDER = "bitnob"  # Can be overridden in environment
+
+    # Bitnob configuration
+    BITNOB_API_KEY = os.getenv("BITNOB_API_KEY")
+    BITNOB_PRODUCTION = os.getenv("BITNOB_PRODUCTION", "false").lower() == "true"
+
+    # Add more provider configurations here
+    # LIGHTSPARK_API_KEY = os.getenv("LIGHTSPARK_API_KEY")
+    # STRIKE_API_KEY = os.getenv("STRIKE_API_KEY")
+
+
 config = Config()

@@ -1,47 +1,23 @@
-import os
-from bitnob import Lightning
 import logging
 from typing import Optional, Dict, Any
 import uuid
 
-from app.config import config
+from app.config import PaymentConfig
+from .payment_factory import PaymentServiceFactory
 
 logger = logging.getLogger(__name__)
 
 
 class LightningService:
     """
-    Service for interacting with the Bitnob API for Lightning Network operations.
+    Service for interacting with Lightning Network operations.
+    Now uses the payment provider abstraction.
     """
 
     def __init__(self):
-        """
-        Initializes the Bitnob Lightning client.
-        Ensures API key is loaded from configuration.
-        """
-        self.api_key = config.BITNOB_API_KEY
-        self.is_production = config.BITNOB_PRODUCTION
-
-        if not self.api_key:
-            logger.error(
-                "Bitnob API key is not configured. Check BITNOB_API_KEY environment variable."
-            )
-        else:
-            # Set environment variables for Bitnob
-            os.environ["BITNOB_API_KEY"] = self.api_key
-            os.environ["BITNOB_PRODUCTION"] = str(self.is_production).lower()
-
-            self._client = Lightning()
-            logger.info("Bitnob Lightning client initialized.")
-
-    @property
-    def client(self) -> Lightning:
-        """
-        Returns the Bitnob Lightning client instance, raising an error if not initialized.
-        """
-        if not self._client:
-            raise RuntimeError("LightningService not initialized. Missing API key.")
-        return self._client
+        """Initialize the payment service"""
+        self._payment_service = PaymentServiceFactory.get_payment_service()
+        logger.info("LightningService initialized with payment provider")
 
     def create_invoice(
         self,
@@ -54,7 +30,7 @@ class LightningService:
         is_fallback_included: bool = True,
     ) -> Optional[str]:
         """
-        Creates a new Lightning invoice (BOLT11) using Bitnob.
+        Creates a new Lightning invoice using the configured payment provider.
 
         Args:
             amount_sats (float): The amount of the invoice in Satoshis.
@@ -69,31 +45,22 @@ class LightningService:
             Optional[str]: The encoded BOLT11 invoice string if successful, None otherwise.
         """
         try:
-            logger.info(
-                f"Creating invoice for {amount_sats} sats with description: '{description}' for customer: {customer_email}"
+            response = self._payment_service.create_invoice(
+                amount_sats=amount_sats,
+                customer_email=customer_email,
+                description=description,
+                expires_at=expires_at,
+                private=private,
+                is_including_private_channels=is_including_private_channels,
+                is_fallback_included=is_fallback_included,
             )
 
-            payload = {
-                "customerEmail": customer_email,
-                "description": description,
-                "tokens": amount_sats,
-                "expires_at": expires_at,
-                "private": private,
-                "is_including_private_channels": is_including_private_channels,
-                "is_fallback_included": is_fallback_included,
-            }
+            if response:
+                return response.encoded_invoice
+            return None
 
-            response = self.client.create_invoice(payload)
-
-            if response and response.get("data"):
-                invoice_data = response["data"]
-                logger.info(f"Successfully created invoice: {invoice_data}")
-                return invoice_data
-            else:
-                logger.error(f"Failed to create invoice. Response: {response}")
-                return None
         except Exception as e:
-            logger.error(f"Error creating Bitnob invoice: {e}", exc_info=True)
+            logger.error(f"Error creating invoice: {e}", exc_info=True)
             return None
 
     def pay_invoice(
@@ -104,7 +71,7 @@ class LightningService:
         description: str = "Payment from FitCheck",
     ) -> Optional[Dict[str, Any]]:
         """
-        Pays a Lightning invoice using Bitnob.
+        Pays a Lightning invoice using the configured payment provider.
 
         Args:
             encoded_invoice (str): The BOLT11 invoice string to pay.
@@ -119,33 +86,19 @@ class LightningService:
             if not reference:
                 reference = f"fitcheck-payment-{uuid.uuid4()}"
 
-            logger.info(
-                f"Attempting to pay invoice {encoded_invoice} for customer {customer_email}"
+            response = self._payment_service.pay_invoice(
+                encoded_invoice=encoded_invoice,
+                customer_email=customer_email,
+                reference=reference,
+                description=description,
             )
 
-            payload = {
-                "customerEmail": customer_email,
-                "reference": reference,
-                "description": description,
-                "payment_request": encoded_invoice,
-            }
+            if response:
+                return response.raw_response
+            return None
 
-            response = self.client.pay_invoice(payload)
-
-            if response and response.get("data"):
-                logger.info(
-                    f"Payment initiated. Reference: {reference}, Response: {response}"
-                )
-                return response
-            else:
-                logger.error(
-                    f"Failed to initiate payment for invoice: {encoded_invoice}. Response: {response}"
-                )
-                return None
         except Exception as e:
-            logger.error(
-                f"Error paying Bitnob invoice {encoded_invoice}: {e}", exc_info=True
-            )
+            logger.error(f"Error paying invoice: {e}", exc_info=True)
             return None
 
     def get_invoice_status(self, invoice_id: str) -> Optional[Dict[str, Any]]:
@@ -159,17 +112,9 @@ class LightningService:
             Optional[Dict[str, Any]]: The invoice status and details if found, None otherwise.
         """
         try:
-            response = self.client.get_invoice(invoice_id)
-            if response and response.get("data"):
-                logger.info(f"Invoice {invoice_id} status: {response['data']}")
-                return response["data"]
-            else:
-                logger.warning(f"Invoice {invoice_id} not found.")
-                return None
+            return self._payment_service.get_invoice_status(invoice_id)
         except Exception as e:
-            logger.error(
-                f"Error retrieving invoice status for {invoice_id}: {e}", exc_info=True
-            )
+            logger.error(f"Error retrieving invoice status: {e}", exc_info=True)
             return None
 
 

@@ -2,7 +2,7 @@
 
 # Run the application with Gunicorn
 run:
-	gunicorn -c gunicorn.conf.py wsgi:app
+	source .venv/bin/activate; gunicorn -c gunicorn.conf.py wsgi:app
 
 # Database migration commands
 migrate-up:

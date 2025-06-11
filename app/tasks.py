@@ -1,30 +1,28 @@
 import io
-from datetime import datetime, timedelta
 import uuid
+from datetime import datetime, timedelta
 
 from flask import current_app
 from PIL import Image
 
 from .extensions import celery, db
 from .models.bid import Bid, BidStatus
-from .models.clothing_item import Item
-from .models.clothing_item import AuctionStatus
+from .models.clothing_item import AuctionStatus, Item
 from .models.token_blocklist import TokenBlocklist
 from .models.user import User
 from .services.ai_service import ai_service
-from .services.notification_service import notification_service
-from .utils.image_handler import image_handler
 from .services.LN_service import lightning_service
 from .services.notification_service import (
-    notification_service,
-    NotificationType,
     Notification,
+    NotificationType,
+    notification_service,
 )
+from .utils.image_handler import image_handler
 
 
 @celery.task
 def process_uploaded_image(image_data, item_id):
-    """Process uploaded image: resize, generate embeddings, and upload to S3"""
+    """Process uploaded image: resize, generate embeddings, and upload to Cloudinary"""
     # Convert bytes to PIL Image
     image = Image.open(io.BytesIO(image_data))
 

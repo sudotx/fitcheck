@@ -17,7 +17,6 @@ class RecommendationEngine:
         # Get user's wardrobe with size filtering
         wardrobe_items = (
             db.session.query(Item)
-            .join(Wardrobe)
             .filter(
                 Item.user_id == user_id,
                 Item.is_clean == True,  # Only clean items
@@ -161,3 +160,6 @@ class RecommendationEngine:
             if accessories
             else random.sample(candidates, min(2, len(candidates)))
         )
+
+
+recommendation_engine = RecommendationEngine()

@@ -46,7 +46,7 @@ def create_app():
     # Initialize JWT
     from flask_jwt_extended import JWTManager
 
-    jwt = JWTManager(app)
+    # jwt = JWTManager(app)
     app.config["JWT_SECRET_KEY"] = config.JWT_SECRET_KEY
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = config.JWT_ACCESS_TOKEN_EXPIRES
     app.config["JWT_REFRESH_TOKEN_EXPIRES"] = config.JWT_REFRESH_TOKEN_EXPIRES
