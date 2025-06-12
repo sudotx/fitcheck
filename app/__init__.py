@@ -64,6 +64,9 @@ def create_app():
     app.config["MAIL_ASCII_ATTACHMENTS"] = False
     app.config["MAIL_USE_SSL"] = False
 
+    app.config["SQLALCHEMY_DATABASE_URI"] = config.SQLALCHEMY_DATABASE_URI
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = config.SQLALCHEMY_TRACK_MODIFICATIONS
+
     # Initialize JWT callbacks after all models are loaded
     init_jwt_callbacks()
 
